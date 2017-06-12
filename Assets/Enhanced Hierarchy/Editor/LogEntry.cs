@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace EnhancedHierarchy {
     /// <summary>
-    /// Log Entries from the console, to check if a gameobject has any errors or warnings
+    /// Log Entries from the console, to check if a gameobject has any errors or warnings.
     /// </summary>
     internal class LogEntry {
 
@@ -22,6 +22,7 @@ namespace EnhancedHierarchy {
         public int Identifier { get { return (int)logEntryFields["identifier"].GetValue(referenceEntry); } }
         public int IsWorldPlaying { get { return (int)logEntryFields["isWorldPlaying"].GetValue(referenceEntry); } }
         public Object Obj { get { return InstanceID == 0 ? null : EditorUtility.InstanceIDToObject(InstanceID); } }
+
         public static Dictionary<GameObject, List<LogEntry>> ReferencedObjects { get; private set; }
 
         private static bool needLogReload;
@@ -34,12 +35,17 @@ namespace EnhancedHierarchy {
 
         static LogEntry() {
             try {
-                var logEntriesType = typeof(Editor).Assembly.GetType("UnityEditorInternal.LogEntries");
-                var logEntryType = typeof(Editor).Assembly.GetType("UnityEditorInternal.LogEntry");
+                var logEntriesType = typeof(Editor).Assembly.GetType("UnityEditorInternal.LogEntries", false);
+                var logEntryType = typeof(Editor).Assembly.GetType("UnityEditorInternal.LogEntry", false);
 
-                getEntryMethod = logEntriesType.GetMethod("GetEntryInternal", Utility.FULL_BINDING);
-                startMethod = logEntriesType.GetMethod("StartGettingEntries", Utility.FULL_BINDING);
-                endMethod = logEntriesType.GetMethod("EndGettingEntries", Utility.FULL_BINDING);
+                if(logEntriesType == null)
+                    logEntriesType = typeof(Editor).Assembly.GetType("UnityEditor.LogEntries", false);
+                if(logEntryType == null)
+                    logEntryType = typeof(Editor).Assembly.GetType("UnityEditor.LogEntry", false);
+
+                getEntryMethod = logEntriesType.GetMethod("GetEntryInternal", ReflectionHelper.FullBinding);
+                startMethod = logEntriesType.GetMethod("StartGettingEntries", ReflectionHelper.FullBinding);
+                endMethod = logEntriesType.GetMethod("EndGettingEntries", ReflectionHelper.FullBinding);
                 logEntryConstructor = logEntryType.GetConstructor(new Type[0]);
                 logEntryFields = new Dictionary<string, FieldInfo>();
 
@@ -49,21 +55,21 @@ namespace EnhancedHierarchy {
                 ReloadReferences();
             }
             catch(Exception e) {
-                if(Preferences.Warnings)
-                    Debug.LogWarning(string.Format("Enhanced Hierarchy, error getting console entries, if this warning persists, consider disabling \"Warnings\" in the preferences: {0}", e));
+                Debug.LogException(e);
+                Preferences.ForceDisableButton(new Icons.Warnings());
             }
-			
-			#if UNITY_5
+
+#if UNITY_5 || UNITY_2017
             Application.logMessageReceivedThreaded += (logString, stackTrace, type) => needLogReload = true;
-			#else
+#else
 			needLogReload = true;
-			#endif
+#endif
             EditorApplication.update += () => {
-                if(needLogReload && Preferences.Warnings && Preferences.Enabled) {
+                if(needLogReload && Preferences.IsButtonEnabled(new Icons.Warnings()) && Preferences.Enabled) {
                     ReloadReferences();
-					#if UNITY_5
+#if UNITY_5 || UNITY_2017
                     needLogReload = false;
-					#endif
+#endif
                 }
             };
         }
@@ -98,12 +104,16 @@ namespace EnhancedHierarchy {
                             ReferencedObjects.Add(go, new List<LogEntry>() { entry });
                     }
                 }
+
+                EditorApplication.RepaintHierarchyWindow();
             }
-			catch(Exception e){
-			Debug.LogException(e);
-			}
+            catch(Exception e) {
+                Debug.LogException(e);
+                Preferences.ForceDisableButton(new Icons.Warnings());
+            }
             finally {
-                endMethod.Invoke(null, null);
+                if(endMethod != null)
+                    endMethod.Invoke(null, null);
             }
         }
 

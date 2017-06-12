@@ -15,24 +15,8 @@ namespace EnhancedHierarchy {
         Layer = 2,
         TagOrLayer = 3,
         LayerOrTag = 4,
-    }
-
-    internal enum DrawType {
-        Enable = 0,
-        Static = 1,
-        Lock = 2,
-        Icon = 3,
-        ApplyPrefab = 4,
-        Tag = 5,
-        Layer = 6,
-        None = 7
-    }
-
-    internal enum StripType {
-        None = 0,
-        Color = 1,
-        Lines = 2,
-        ColorAndLines = Color | Lines
+        TagAndLayer = 5,
+        LayerAndTag = 6
     }
 
     internal enum ChildrenChangeMode {
@@ -40,4 +24,5 @@ namespace EnhancedHierarchy {
         ObjectOnly = 1,
         Ask = 2,
     }
+
 }

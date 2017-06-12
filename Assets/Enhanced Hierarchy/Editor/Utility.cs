@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
+using System.Text;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -14,74 +12,65 @@ namespace EnhancedHierarchy {
     /// </summary>
     internal static class Utility {
 
-        private const double FPS_UPDATE_RATE = 0.5d; //2 times per second
+        private const string CTRL = "Ctrl";
+        private const string CMD = "Cmd";
         private const string MENU_ITEM_PATH = "Edit/Enhanced Hierarchy %h";
-        public const BindingFlags FULL_BINDING = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public;
-
-        private static object playModeColor = typeof(Editor).Assembly.GetType("UnityEditor.HostView").GetField("kPlayModeDarken", FULL_BINDING).GetValue(null);
-        private static PropertyInfo playModeColorProp = typeof(Editor).Assembly.GetType("UnityEditor.PrefColor").GetProperty("Color", FULL_BINDING);
-        private static Type hierarchyWindowType = typeof(Editor).Assembly.GetType("UnityEditor.SceneHierarchyWindow");
 
         private static int errorCount;
-        private static int frames;
-        private static double lastFps;
-        private static double lastTime;
 
-        public static Color PlaymodeTint {
-            get {
-                try {
-                    if(!EditorApplication.isPlayingOrWillChangePlaymode)
-                        return Color.white;
-                    return (Color)playModeColorProp.GetValue(playModeColor, null);
-                }
-                catch {
-                    return Color.white;
-                }
-            }
-        }
-        public static bool HierarchyFocused { get { return EditorWindow.focusedWindow && EditorWindow.focusedWindow.GetType() == hierarchyWindowType; } }
-
-        public static void LogException(Exception e) {
-            Debug.LogError(string.Format("Unexpected exception in Enhanced Hierarchy: {0}", e));
-
-            if(errorCount++ >= 3) {
-                Debug.LogWarning("Automatically disabling Enhanced Hierarchy, if the error persists contact the developer");
-                Preferences.Enabled.Value = false;
-                errorCount = 0;
-            }
-        }
+        public static string CtrlKey { get { return Application.platform == RuntimePlatform.OSXEditor ? CMD : CTRL; } }
 
         [MenuItem(MENU_ITEM_PATH, false, int.MinValue)]
         private static void EnableDisableHierarchy() {
             Preferences.Enabled.Value = !Preferences.Enabled;
-            InternalEditorUtility.RepaintAllViews();
+            EditorApplication.RepaintHierarchyWindow();
         }
 
         [MenuItem(MENU_ITEM_PATH, true)]
         private static bool CheckHierarchyEnabled() {
-#if UNITY_5
+#if UNITY_5 || UNITY_2017
             Menu.SetChecked(MENU_ITEM_PATH, Preferences.Enabled);
 #endif
             return true;
         }
 
         [Conditional("HIERARCHY_DEBUG")]
-        public static void ShowFPS() {
-            using(new ProfilerSample("FPS Counter")) {
-                frames++;
+        public static void EnableFPSCounter() {
+            var frames = 0;
+            var fps = 0d;
+            var lastTime = 0d;
+            var titleProperty = ReflectionHelper.GetHierarchyTitleProperty();
+            var isTitleContent = titleProperty.Name == "titleContent";
+            var content = new GUIContent();
+            var evt = EventType.Repaint;
 
-                var rect = new Rect(0f, 0f, 65f, 16f);
+            EditorApplication.hierarchyWindowItemOnGUI += (id, rect) => {
+                using(ProfilerSample.Get("Enhanced Hierarchy"))
+                using(ProfilerSample.Get("FPS Counter")) {
+                    if(evt == Event.current.type)
+                        return;
 
-                EditorGUI.DrawRect(rect, Color.yellow);
-                EditorGUI.LabelField(rect, string.Format("{0:00.0} FPS", lastFps));
+                    evt = Event.current.type;
 
-                if(EditorApplication.timeSinceStartup - lastTime < FPS_UPDATE_RATE)
-                    return;
+                    if(evt == EventType.Repaint)
+                        frames++;
 
-                lastFps = frames / (EditorApplication.timeSinceStartup - lastTime);
-                lastTime = EditorApplication.timeSinceStartup;
-                frames = 0;
-            }
+                    if(EditorApplication.timeSinceStartup - lastTime < 0.5d)
+                        return;
+
+                    fps = frames / (EditorApplication.timeSinceStartup - lastTime);
+                    lastTime = EditorApplication.timeSinceStartup;
+                    frames = 0;
+
+                    content.text = string.Format("{0:00.0} FPS", fps);
+                    content.image = Styles.warningIcon;
+
+                    if(isTitleContent)
+                        titleProperty.SetValue(ReflectionHelper.HierarchyWindowInstance, content, null);
+                    else
+                        titleProperty.SetValue(ReflectionHelper.HierarchyWindowInstance, content.text, null);
+                }
+            };
         }
 
         [Conditional("HIERARCHY_DEBUG")]
@@ -89,91 +78,77 @@ namespace EnhancedHierarchy {
             EditorApplication.update += EditorApplication.RepaintHierarchyWindow;
         }
 
-        public static void ShowIconSelector(Object targetObj, Rect activatorRect, bool showLabelIcons) {
-            try {
-                var type = typeof(Editor).Assembly.GetType("UnityEditor.IconSelector");
-                var instance = ScriptableObject.CreateInstance(type);
-                var parameters = new object[] {
-                    targetObj,
-                    activatorRect,
-                    showLabelIcons
-                };
+        public static void LogException(Exception e) {
+            Debug.LogError(string.Format("Unexpected exception in Enhanced Hierarchy: {0}", e));
 
-                type.InvokeMember("Init", FULL_BINDING | BindingFlags.InvokeMethod, null, instance, parameters);
+            if(errorCount++ >= 10) {
+                Debug.LogWarning("Automatically disabling Enhanced Hierarchy, if the error persists contact the developer");
+                Preferences.Enabled.Value = false;
+                errorCount = 0;
             }
-            catch(Exception e) {
-                Debug.LogWarning("Failed to open icon selector\n" + e);
+        }
+
+        public static GUIStyle CreateStyleFromTextures(Texture2D on, Texture2D off) {
+            return CreateStyleFromTextures(null, on, off);
+        }
+
+        public static GUIStyle CreateStyleFromTextures(GUIStyle reference, Texture2D on, Texture2D off) {
+            using(ProfilerSample.Get()) {
+                var style = reference != null ? new GUIStyle(reference) : new GUIStyle();
+
+                style.active.background = off;
+                style.focused.background = off;
+                style.hover.background = off;
+                style.normal.background = off;
+                style.onActive.background = on;
+                style.onFocused.background = on;
+                style.onHover.background = on;
+                style.onNormal.background = on;
+                style.imagePosition = ImagePosition.ImageOnly;
+                style.fixedHeight = 15f;
+                style.fixedWidth = 15f;
+
+                return style;
             }
         }
 
         public static Texture2D FindOrLoad(byte[] bytes, string name) {
-            return FindTextureFromName(name) ?? ConvertToTexture(bytes, name);
+            return FindTextureFromName(name) ?? LoadTexture(bytes, name);
         }
 
-        public static Texture2D ConvertToTexture(byte[] bytes, string name) {
-            try {
-                var texture = new Texture2D(0, 0, TextureFormat.ARGB32, false, true) {
-                    name = name,
-                    hideFlags = HideFlags.HideAndDontSave
-                };
+        public static Texture2D LoadTexture(byte[] bytes, string name) {
+            using(ProfilerSample.Get())
+                try {
+                    var texture = new Texture2D(0, 0, TextureFormat.ARGB32, false, true);
 
-                //Texture2D.LoadImage changed to an extension method in Unity 2017
-                //Compiling it with the old method will make the module stop working on 2017
-                //Compiling it with the extension method will make the module stop working with older versions
-                var imageConversionClass = typeof(Texture2D).Assembly.GetType("UnityEngine.ImageConversion", false);
+                    texture.name = name;
+                    texture.hideFlags = HideFlags.HideAndDontSave;
 
-                if(imageConversionClass == null) {
-                    var loadMethod = typeof(Texture2D).GetMethod("LoadImage", new Type[] { typeof(byte[]) });
-                    loadMethod.Invoke(texture, new object[] { bytes });
+                    ReflectionHelper.LoadTexture(texture, bytes);
+
+                    return texture;
                 }
-                else {
-                    var loadMethod = imageConversionClass.GetMethod("LoadImage", new Type[] { typeof(Texture2D), typeof(byte[]) });
-                    loadMethod.Invoke(null, new object[] { texture, bytes });
+                catch(Exception e) {
+                    Debug.LogError(string.Format("Failed to load texture \"{0}\": {1}", name, e));
+                    return null;
                 }
-
-                return texture;
-            }
-            catch(Exception e) {
-                Debug.LogException(e);
-                return null;
-            }
         }
 
         public static Texture2D FindTextureFromName(string name) {
-            try {
-                var textures = Resources.FindObjectsOfTypeAll<Texture2D>();
+            using(ProfilerSample.Get())
+                try {
+                    var textures = Resources.FindObjectsOfTypeAll<Texture2D>();
 
-                for(var i = 0; i < textures.Length; i++)
-                    if(textures[i].name == name)
-                        return textures[i];
+                    for(var i = 0; i < textures.Length; i++)
+                        if(textures[i].name == name)
+                            return textures[i];
 
-                return null;
-            }
-            catch(Exception e) {
-                Debug.LogException(e);
-                return null;
-            }
-        }
-
-        public static Color GetHierarchyColor(GameObject go) {
-            if(!go)
-                return Color.black;
-
-            var prefabType = PrefabUtility.GetPrefabType(PrefabUtility.FindPrefabRoot(go));
-            var active = go.activeInHierarchy;
-            var style = active ? Styles.labelNormal : Styles.labelDisabled;
-
-            switch(prefabType) {
-                case PrefabType.PrefabInstance:
-                case PrefabType.ModelPrefabInstance:
-                    style = active ? Styles.labelPrefab : Styles.labelPrefabDisabled;
-                    break;
-                case PrefabType.MissingPrefabInstance:
-                    style = active ? Styles.labelPrefabBroken : Styles.labelPrefabBrokenDisabled;
-                    break;
-            }
-
-            return style.normal.textColor;
+                    return null;
+                }
+                catch(Exception e) {
+                    Debug.LogError(string.Format("Failed to find texture \"{0}\": {1}", name, e));
+                    return null;
+                }
         }
 
         public static Color GetHierarchyColor(Transform t) {
@@ -183,11 +158,53 @@ namespace EnhancedHierarchy {
             return GetHierarchyColor(t.gameObject);
         }
 
-        public static bool LastInHierarchy(Transform t) {
-            if(!t)
-                return true;
+        public static Color GetHierarchyColor(GameObject go) {
+            if(!go)
+                return Color.black;
 
-            return t.parent.GetChild(t.parent.childCount - 1) == t;
+            return GetHierarchyLabelStyle(go).normal.textColor;
+        }
+
+        public static GUIStyle GetHierarchyLabelStyle(GameObject go) {
+            using(ProfilerSample.Get()) {
+                if(!go)
+                    return EditorStyles.label;
+
+                var prefabType = PrefabUtility.GetPrefabType(PrefabUtility.FindPrefabRoot(go));
+                var active = go.activeInHierarchy;
+
+                switch(prefabType) {
+                    case PrefabType.PrefabInstance:
+                    case PrefabType.ModelPrefabInstance:
+                        return active ? Styles.labelPrefab : Styles.labelPrefabDisabled;
+
+                    case PrefabType.MissingPrefabInstance:
+                        return active ? Styles.labelPrefabBroken : Styles.labelPrefabBrokenDisabled;
+
+                    default:
+                        return active ? Styles.labelNormal : Styles.labelDisabled;
+                }
+            }
+        }
+
+        public static Color OverlayColors(Color src, Color dst) {
+            using(ProfilerSample.Get()) {
+                var alpha = dst.a + src.a * (1f - dst.a);
+                var result = (dst * dst.a + src * src.a * (1f - dst.a)) / alpha;
+
+                result.a = alpha;
+
+                return result;
+            }
+        }
+
+        public static bool LastInHierarchy(Transform t) {
+            using(ProfilerSample.Get()) {
+                if(!t)
+                    return true;
+
+                return t.parent.GetChild(t.parent.childCount - 1) == t;
+            }
         }
 
         public static bool LastInHierarchy(GameObject go) {
@@ -198,107 +215,115 @@ namespace EnhancedHierarchy {
         }
 
         public static void LockObject(GameObject go) {
-            Undo.RegisterFullObjectHierarchyUndo(go, "Lock object");
+            using(ProfilerSample.Get()) {
+                go.hideFlags |= HideFlags.NotEditable;
 
-            go.hideFlags |= HideFlags.NotEditable;
+                if(!Preferences.AllowSelectingLockedSceneView)
+                    foreach(var comp in go.GetComponents<Component>())
+                        if(comp && !(comp is Transform)) {
+                            comp.hideFlags |= HideFlags.NotEditable;
+                            comp.hideFlags |= HideFlags.HideInHierarchy;
+                        }
 
-            if(!Preferences.AllowSelectingLockedSceneView)
-                foreach(var comp in go.GetComponents<Component>())
-                    if(!(comp is Transform)) {
-                        comp.hideFlags |= HideFlags.NotEditable;
-                        comp.hideFlags |= HideFlags.HideInHierarchy;
-                    }
-
-            EditorUtility.SetDirty(go);
+                EditorUtility.SetDirty(go);
+            }
         }
 
         public static void UnlockObject(GameObject go) {
-            Undo.RegisterFullObjectHierarchyUndo(go, "Unlock Object");
+            using(ProfilerSample.Get()) {
+                go.hideFlags &= ~HideFlags.NotEditable;
 
-            go.hideFlags &= ~HideFlags.NotEditable;
-
-			foreach(var comp in go.GetComponents<Component>())
-				if(!(comp is Transform)) {
-					comp.hideFlags &= ~HideFlags.NotEditable;
-					comp.hideFlags &= ~HideFlags.HideInHierarchy;
-				}
-
-            EditorUtility.SetDirty(go);
-        }
-
-        public static GUIStyle CreateStyleFromTextures(Texture2D on, Texture2D off) {
-            var style = new GUIStyle();
-
-            style.active.background = off;
-            style.focused.background = off;
-            style.hover.background = off;
-            style.normal.background = off;
-            style.onActive.background = on;
-            style.onFocused.background = on;
-            style.onHover.background = on;
-            style.onNormal.background = on;
-            style.imagePosition = ImagePosition.ImageOnly;
-            style.fixedHeight = 15f;
-            style.fixedWidth = 15f;
-
-            return style;
-        }
-
-        public static ChildrenChangeMode AskChangeModeIfNecessary(List<GameObject> objs, ChildrenChangeMode reference, string title, string message) {
-            if(reference != ChildrenChangeMode.Ask)
-                return reference;
-
-            foreach(var obj in objs)
-                if(obj && obj.transform.childCount > 0)
-                    return (ChildrenChangeMode)EditorUtility.DisplayDialogComplex(title, message, "Yes, change children", "No, this object only", "Cancel");
-
-            return ChildrenChangeMode.ObjectOnly;
-        }
-
-        public static void ChangeLayerAndAskForChildren(List<GameObject> objs, int newLayer) {
-            foreach(var obj in objs)
-                Undo.RegisterFullObjectHierarchyUndo(obj, "Layer changed");
-
-            var changeMode = AskChangeModeIfNecessary(objs, Preferences.LayerAskMode, "Change Layer",
-                   "Do you want to change the layers of the children objects as well?");
-
-            switch(changeMode) {
-                case ChildrenChangeMode.ObjectOnly:
-                    foreach(var obj in objs)
-                        obj.layer = newLayer;
-                    break;
-
-                case ChildrenChangeMode.ObjectAndChildren:
-                    foreach(var obj in objs) {
-                        obj.layer = newLayer;
-                        foreach(var transform in obj.GetComponentsInChildren<Transform>(true))
-                            transform.gameObject.layer = newLayer;
+                foreach(var comp in go.GetComponents<Component>())
+                    if(comp && !(comp is Transform)) {
+                        comp.hideFlags &= ~HideFlags.NotEditable;
+                        comp.hideFlags &= ~HideFlags.HideInHierarchy;
                     }
-                    break;
+
+                EditorUtility.SetDirty(go);
             }
         }
 
-        public static void ChangeTagAndAskForChildren(List<GameObject> objs, string newTag) {
-            foreach(var obj in objs)
-                Undo.RegisterFullObjectHierarchyUndo(obj, "Tag changed");
+        public static void RelockAllObjects() {
+            using(ProfilerSample.Get())
+                foreach(var obj in Resources.FindObjectsOfTypeAll<GameObject>())
+                    if(obj && (obj.hideFlags & HideFlags.HideInHierarchy) == 0 && !EditorUtility.IsPersistent(obj)) {
+                        var locked = (obj.hideFlags & HideFlags.NotEditable) != 0;
 
-            var changeMode = AskChangeModeIfNecessary(objs, Preferences.TagAskMode, "Change Layer",
-                   "Do you want to change the tags of the children objects as well?");
+                        UnlockObject(obj);
 
-            switch(changeMode) {
-                case ChildrenChangeMode.ObjectOnly:
-                    foreach(var obj in objs)
-                        obj.tag = newTag;
-                    break;
-
-                case ChildrenChangeMode.ObjectAndChildren:
-                    foreach(var obj in objs) {
-                        obj.tag = newTag;
-                        foreach(var transform in obj.GetComponentsInChildren<Transform>(true))
-                            transform.tag = newTag;
+                        if(locked)
+                            LockObject(obj);
                     }
-                    break;
+        }
+
+        public static void UnlockAllObjects() {
+            using(ProfilerSample.Get())
+                foreach(var obj in Resources.FindObjectsOfTypeAll<GameObject>())
+                    if(obj && (obj.hideFlags & HideFlags.HideInHierarchy) == 0 && !EditorUtility.IsPersistent(obj))
+                        UnlockObject(obj);
+        }
+
+        public static void ApplyPrefabModifications(GameObject go, bool allowCreatingNew) {
+            var isPrefab = PrefabUtility.GetPrefabType(go) == PrefabType.PrefabInstance;
+
+            if(isPrefab) {
+                var selection = Selection.instanceIDs;
+                var prefab = PrefabUtility.GetPrefabParent(go);
+
+                Selection.activeGameObject = go;
+                EditorApplication.ExecuteMenuItem("GameObject/Apply Changes To Prefab");
+                EditorUtility.SetDirty(prefab);
+                Selection.instanceIDs = selection;
             }
+            else if(allowCreatingNew) {
+                var path = EditorUtility.SaveFilePanelInProject("Save prefab", "New Prefab", "prefab", "Save the selected prefab");
+
+                if(!string.IsNullOrEmpty(path))
+                    PrefabUtility.CreatePrefab(path, go, ReplacePrefabOptions.ConnectToPrefab);
+            }
+        }
+
+        public static string EnumFlagsToString(Enum value) {
+            try {
+                if((int)(object)value == -1)
+                    return "Everything";
+
+                var str = new StringBuilder();
+                var separator = ", ";
+
+                foreach(var enumValue in Enum.GetValues(value.GetType())) {
+                    var i = (int)enumValue;
+                    if(i != 0 && (i & (i - 1)) == 0 && Enum.IsDefined(value.GetType(), i) && (Convert.ToInt32(value) & i) != 0) {
+                        str.Append(ObjectNames.NicifyVariableName(enumValue.ToString()));
+                        str.Append(separator);
+                    }
+                }
+
+                if(str.Length > 0)
+                    str.Length -= separator.Length;
+
+                return str.ToString();
+            }
+#if HIERARCHY_DEBUG
+            catch(Exception e) {
+                Debug.LogException(e);
+                return string.Empty;
+            }
+#else
+            catch {
+                return string.Empty;
+            }
+#endif
+        }
+
+        public static string SafeGetName(Object obj) {
+            if(obj == null)
+                return "None";
+
+            if(string.IsNullOrEmpty(obj.name))
+                return "Unnamed";
+
+            return obj.name;
         }
     }
 }

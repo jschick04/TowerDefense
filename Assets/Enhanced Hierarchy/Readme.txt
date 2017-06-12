@@ -36,6 +36,33 @@ Q: My game fail to compile if I use the extension, how to fix it?
 A: The extension must be placed inside a folder called Editor because it uses the UnityEditor API.
 
 CHANGELOG:
+Version 2.2.1:
+- Fixed optional module not saving settings.
+
+Version 2.2.0: (I apologize for all the users that send feedbacks and reports for the delay of this update, I was a little busy I couldn't find time to publish it)
+- Unity focus fix while using "Ask" on change modes.
+- Ctrl and Cmd modifiers to children change mode.
+- New preferences for the row separators.
+- Added new per layer row color.
+- Fixed NullReferenceException while attempting to lock a game object with a missing mono behavior.
+- Added an option to unlock all objects in the scene.
+- Change multiple object icons at once.
+- Apply multiple prefabs at once.
+- Fixed label icon size if option "Left icon at leftmost" was disabled.
+- Locking/Unlocking performance improved.
+- Fixed selection inconsistency if not using "Allow locked selection" in hierarchy.
+- Improved settings window.
+- Improved the numeric child foldout.
+- Fixed Unity 2017 logs in MacOS.
+- Selection will now scroll when the mouse is beyond hierarchy boundaries.
+- Icons are now easier to implement, just inherit it from RightIcon and it will work.
+- Code improvements.
+- Better undo performance.
+- Monobehaviour icon, appears when the object contains any mono behaviour script.
+- Sound icon, appears when the object is playing any audio clip.
+- Better undo performance.
+- Better exception management.
+
 Version 2.1.4:
 - Prevent selection of locked objects in the scene view.
 - Unity 4.7 support.
@@ -47,7 +74,7 @@ Version 2.1.2:
 - Unity 2017 support.
 
 Version 2.1.1:
-- Fixed warning not showing up for missing mono behaviours.
+- Fixed warning not showing up for missing mono behaviors.
 - Fixed warnings, log and messages icons color when using linear color space.
 - Fixed bug of the layer button not appearing in the settings.
 - Added "child ask mode" for tag, layer and lock buttons.
@@ -55,7 +82,7 @@ Version 2.1.1:
 - Compatibility with "Favorite Tab[s]" (http://u3d.as/3hG).
 - New settings to change all the selected objects, not only the object owner of the button or toggle.
 - Added the possibility to add one icon to the left side, it's configurable in the preferences.
-- New child expand toggle that shows how many child the object have.
+- New child expand toggle that shows how many children the object have.
 - Smaller mini label for narrow hierarchies.
 
 Version 2.1.0:
@@ -77,7 +104,7 @@ Version 2.0.2:
 Version 2.0.1:
 - Improved performance of warnings, now the hierarchy can handle thousands of logs without lagging.
 - Added alpha change for disabled toggles.
-- Readded the ability of changing tag and layer by clicking in the mini label, this was removed in the previous version.
+- Readded the ability to change tag and layer by clicking on the mini label, this was removed in the previous version.
 - Added a feature to save prefabs, appears when apply prefab button is clicked and the object is not a prefab yet.
 - Added trailing when the name is bigger than the view area.
 - Minor bug fixes.
@@ -89,7 +116,7 @@ Version 2.0.0:
 - New feature: Vertical lines separating the buttons, like the ones in blender's outliner.
 - New feature: When changing static flags of an object it asks if you want to change children flags as well, like the inspector (can be disabled).
 - Support for both tag and layer dropdowns at the same time.
-- New preferences interface, now it's easily to understand, enable and disable features.
+- New preferences interface, now it's easier to understand, enable and disable features.
 - Coding improvements.
 - Minor bug fixes.
 

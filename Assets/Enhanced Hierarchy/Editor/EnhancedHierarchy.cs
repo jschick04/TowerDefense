@@ -1,5 +1,5 @@
 ﻿/* Enhanced Hierarchy for Unity
- * Version 2.1.4, last change 25/04/2017
+ * Version 2.2.1, last change 11/06/2017
  * Samuel Schultze
  * samuelschultze@gmail.com
 */
@@ -7,688 +7,635 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace EnhancedHierarchy {
     /// <summary>
     /// Main class, draws hierarchy items.
     /// </summary>
     [InitializeOnLoad]
-    internal static class EnhancedHierarchy {
-
-        private const string UNTAGGED = "Untagged";
-        private const int UNLAYERED = 0;
-
-        private static int warningsIconCount;
-        private static bool isFirstVisible;
-        private static bool isRepaintEvent;
-        private static bool isGameObject;
-        private static bool hasTag;
-        private static bool hasLayer;
-        private static string goLogs;
-        private static string goWarnings;
-        private static string goErrors;
-        private static Rect rawRect;
-        private static Rect lastRect;
-        private static Rect selectionRect;
-        private static Color currentColor;
-        private static Vector2 selectionStart;
-        private static GameObject currentGameObject;
-        private static List<GameObject> dragSelection;
-        private static GUIContent tempTooltipContent = new GUIContent();
+    internal static partial class EnhancedHierarchy {
 
         static EnhancedHierarchy() {
+            Utility.EnableFPSCounter();
             Utility.ForceUpdateHierarchyEveryFrame();
+
             EditorApplication.hierarchyWindowItemOnGUI += SetItemInformation;
             EditorApplication.hierarchyWindowItemOnGUI += OnItemGUI;
             EditorApplication.RepaintHierarchyWindow();
-        }
-
-        private static void SetItemInformation(int id, Rect rect) {
-            if(!Preferences.Enabled)
-                return;
-
-            using(new ProfilerSample("Enhanced Hierarchy"))
-            using(new ProfilerSample("Getting items information"))
-                try {
-                    isRepaintEvent = Event.current.type == EventType.Repaint;
-
-                    rawRect = rect;
-                    currentGameObject = EditorUtility.InstanceIDToObject(id) as GameObject;
-
-                    isGameObject = currentGameObject;
-
-                    if(isGameObject) {
-                        hasTag = currentGameObject.tag != UNTAGGED;
-                        hasLayer = currentGameObject.layer != UNLAYERED;
-                        currentColor = Utility.GetHierarchyColor(currentGameObject);
-                    }
-
-                    isFirstVisible = rawRect.y <= lastRect.y;
-
-                    //if(isFirstVisible)
-                    //finalRect = lastRect;
-
-                    //isLastVisible = finalRect == rawRect;
-
-                    //if(isFirstVisible)
-                    //    EditorGUI.DrawRect(rawRect, Color.red);
-                    //if(isLastVisible)
-                    //    EditorGUI.DrawRect(rawRect, Color.blue);
-
-                    if(isRepaintEvent && isFirstVisible)
-                        Utility.ShowFPS();
-                }
-                catch(Exception e) {
-                    Utility.LogException(e);
-                }
         }
 
         private static void OnItemGUI(int id, Rect rect) {
             if(!Preferences.Enabled)
                 return;
 
-            using(new ProfilerSample("Enhanced Hierarchy"))
+            using(ProfilerSample.Get("Enhanced Hierarchy"))
                 try {
-                    if(Preferences.Selection)
-                        DoSelection(rawRect);
+                    if(IsGameObject) {
+                        foreach(var icon in Preferences.RightIcons.Value)
+                            icon.Init();
 
-                    if(isFirstVisible && !Preferences.AllowSelectingLocked)
-                        IgnoreLockedSelection();
+                        foreach(var icon in Preferences.LeftIcons.Value)
+                            icon.Init();
 
-                    if(isFirstVisible && isRepaintEvent) {
-                        if(Preferences.ColorSeparator)
-                            ColorSort(rawRect);
-                        if(Preferences.LineSeparator)
-                            DrawHorizontalSeparator(rawRect);
+                        Preferences.LeftSideButton.Value.Init();
                     }
 
-                    if(isGameObject && isRepaintEvent) {
-                        if(Preferences.Tree)
-                            DrawTree(rawRect);
-                        warningsIconCount = 0;
-                        if(Preferences.Warnings)
-                            GetGameObjectWarnings();
-                        if(Preferences.Trailing)
-                            DoTrailing(rawRect);
-                        if(Preferences.Warnings)
-                            DrawWarnings(rawRect);
-                    }
+                    SetTitle("EH 2.0");
+                    CalculateIconsWidth();
+                    DoSelection(RawRect);
+                    IgnoreLockedSelection();
+                    var trailingWidth = DoTrailing(RawRect);
+                    ColorSort(RawRect);
+                    DrawTree(RawRect);
+                    DrawLeftSideIcons(RawRect);
+                    ChildToggle();
+                    DrawTooltip(RawRect, trailingWidth);
 
-                    if(isGameObject) {
-                        //Undo.RecordObject(currentGameObject, "Hierarchy Changed");
-                        //Undo.RegisterFullObjectHierarchyUndo(currentGameObject, "Hierarchy Changed");
-
-                        rect.xMin = rect.xMax - rect.height;
-                        rect.x += rect.height - Preferences.Offset;
+                    if(IsGameObject) {
+                        rect.xMax -= Preferences.Offset;
+                        rect.xMin = rect.xMax;
                         rect.y++;
 
-                        if(Preferences.ReplaceToggle && currentGameObject.transform.childCount > 0)
-                            ChildToggle();
+                        foreach(var icon in Preferences.RightIcons.Value)
+                            try {
+                                using(new GUIBackgroundColor(Styles.backgroundColorEnabled)) {
+                                    rect.xMin -= icon.Width;
+                                    icon.DoGUI(rect);
+                                    rect.xMax -= icon.Width;
+                                }
+                            }
+                            catch(Exception e) {
+                                Debug.LogException(e);
+                                Preferences.ForceDisableButton(icon);
+                            }
 
-                        for(var i = 0; i < Preferences.DrawOrder.Count; i++) {
-                            rect.x -= rect.height;
-                            GUI.backgroundColor = Styles.backgroundColorEnabled;
-                            DrawButtonOnRect(Preferences.DrawOrder[i], rect);
+                        var leftSideRect = RawRect;
+
+                        try {
+                            if(Preferences.LeftmostButton)
+                                leftSideRect.xMin = 0f;
+                            else
+                                leftSideRect.xMin -= 2f + CurrentGameObject.transform.childCount > 0 || Preferences.Tree ? 30f : 18f;
+
+                            leftSideRect.xMax = leftSideRect.xMin + Preferences.LeftSideButton.Value.Width;
+
+                            using(new GUIBackgroundColor(Styles.backgroundColorEnabled))
+                                Preferences.LeftSideButton.Value.DoGUI(leftSideRect);
                         }
-
-                        var leftSideRect = rawRect;
-
-                        if(Preferences.LeftmostButton) {
-                            leftSideRect.xMin = 0f;
-                            leftSideRect.xMax = 18f;
+                        catch(Exception e) {
+                            Debug.LogException(e);
+                            Preferences.ForceDisableButton(Preferences.LeftSideButton.Value);
                         }
-                        else {
-                            leftSideRect.xMax = leftSideRect.xMin;
-                            leftSideRect.xMin -= currentGameObject.transform.childCount > 0 || Preferences.Tree ? 30f : 18f;
-                            leftSideRect.x += 2f;
-                        }
-
-                        DrawButtonOnRect(Preferences.LeftSideButton, leftSideRect);
-                        DrawMiniLabel(ref rect);
-                        GUI.backgroundColor = Color.white;
                     }
 
-                    if(Preferences.Tooltips && isGameObject && isRepaintEvent)
-                        DrawTooltip(rect);
+                    DrawMiniLabel(ref rect);
+                    DrawHorizontalSeparator(RawRect);
                 }
                 catch(Exception e) {
                     Utility.LogException(e);
                 }
-                finally {
-                    if(isRepaintEvent)
-                        lastRect = rawRect;
-                }
         }
 
-        private static void DrawButtonOnRect(DrawType button, Rect rect) {
-            switch(button) {
-                case DrawType.Enable:
-                    DrawActiveButton(rect);
-                    break;
+        private static void SetTitle(string title) {
+            try {
+                if(!IsFirstVisible || !IsRepaintEvent)
+                    return;
 
-                case DrawType.Static:
-                    DrawStaticButton(rect);
-                    break;
+                var titleProperty = ReflectionHelper.GetHierarchyTitleProperty();
+                var isTitleContent = titleProperty.Name == "titleContent";
 
-                case DrawType.Lock:
-                    DrawLockButton(rect);
-                    break;
-
-                case DrawType.Icon:
-                    DrawIcon(rect);
-                    break;
-
-                case DrawType.ApplyPrefab:
-                    DrawPrefabApply(rect);
-                    break;
-
-                case DrawType.Tag:
-                    DrawTag(rect);
-                    break;
-
-                case DrawType.Layer:
-                    DrawLayer(rect);
-                    break;
+                if(isTitleContent) {
+                    var content = (GUIContent)titleProperty.GetValue(ReflectionHelper.HierarchyWindowInstance, null);
+                    content.text = title;
+                    titleProperty.SetValue(ReflectionHelper.HierarchyWindowInstance, content, null);
+                }
+            }
+            catch(Exception e) {
+                Debug.LogWarning("Failed to set hieararchy title: " + e);
             }
         }
 
         private static void IgnoreLockedSelection() {
-            var selection = Selection.objects;
-            var changed = false;
+            if(Preferences.AllowSelectingLocked || !IsFirstVisible || !IsRepaintEvent)
+                return;
 
-            for(var i = 0; i < selection.Length; i++)
-                if(selection[i] is GameObject && !EditorUtility.IsPersistent(selection[i]) && (selection[i].hideFlags & HideFlags.NotEditable) != 0) {
-                    selection[i] = null;
-                    changed = true;
+            using(ProfilerSample.Get()) {
+                var selection = Selection.objects;
+                var changed = false;
+
+                for(var i = 0; i < selection.Length; i++)
+                    if(selection[i] is GameObject && (selection[i].hideFlags & HideFlags.NotEditable) != 0 && !EditorUtility.IsPersistent(selection[i])) {
+                        selection[i] = null;
+                        changed = true;
+                    }
+
+                if(changed) {
+                    Selection.objects = selection;
+                    ReflectionHelper.SetHierarchySelectionNeedSync();
+                    EditorApplication.RepaintHierarchyWindow();
                 }
-
-            if(changed) {
-                Selection.objects = selection;
-                EditorApplication.RepaintHierarchyWindow();
             }
         }
 
         private static void ChildToggle() {
-            switch(Event.current.type) {
-                case EventType.Repaint:
-                    var rect = rawRect;
-
-                    rect.xMax = rect.xMin;
-                    rect.xMin -= 18f;
-                    rect.yMin += 2f;
-                    rect.x -= 1f;
-
-                    EditorGUI.DrawRect(rect, Styles.normalColor * Utility.PlaymodeTint);
-                    if(Preferences.ColorSeparator && rect.y / 16f % 2 <= 1f)
-                        EditorGUI.DrawRect(rect, Styles.sortColor * Utility.PlaymodeTint);
-                    if(Selection.gameObjects.Contains(currentGameObject))
-                        EditorGUI.DrawRect(rect, Utility.HierarchyFocused ? Styles.selectedFocusedColor : Styles.selectedUnfocusedColor);
-
-                    GUI.contentColor = currentColor;
-                    Styles.newToggleStyle.Draw(rect, new GUIContent(currentGameObject.transform.childCount.ToString("00")), -1);
-                    GUI.contentColor = Color.white;
-                    break;
-            }
-        }
-
-        private static void DrawStaticButton(Rect rect) {
-            using(new ProfilerSample("Static toggle")) {
-                GUI.changed = false;
-                GUI.backgroundColor = currentGameObject.isStatic ? Styles.backgroundColorDisabled : Styles.backgroundColorEnabled;
-                GUI.Toggle(rect, currentGameObject.isStatic, Styles.staticContent, Styles.staticToggleStyle);
-
-                if(!GUI.changed)
+            using(ProfilerSample.Get()) {
+                if(!Preferences.NumericChildExpand || !IsRepaintEvent || !IsGameObject || CurrentGameObject.transform.childCount <= 0)
                     return;
 
-                var isStatic = !currentGameObject.isStatic;
-                var selectedObjects = GetSelectedObjectsAndCurrent();
-                var changeMode = Utility.AskChangeModeIfNecessary(selectedObjects, Preferences.StaticAskMode.Value, "Change Static Flags",
-                    "Do you want to " + (!isStatic ? "enable" : "disable") + " the static flags for all child objects as well?");
+                var rect = RawRect;
+                var childString = CurrentGameObject.transform.childCount.ToString("00");
+                var expanded = ReflectionHelper.GetTransformIsExpanded(CurrentGameObject);
 
-                foreach(var obj in selectedObjects)
-                    Undo.RegisterFullObjectHierarchyUndo(obj, "Static Flags Changed");
+                rect.xMax = rect.xMin - 1f;
+                rect.xMin -= 15f;
 
-                switch(changeMode) {
-                    case ChildrenChangeMode.ObjectOnly:
-                        foreach(var obj in selectedObjects)
-                            obj.isStatic = isStatic;
-                        break;
+                if(childString.Length > 2)
+                    rect.xMin -= 4f;
 
-                    case ChildrenChangeMode.ObjectAndChildren:
-                        foreach(var obj in selectedObjects) {
-                            var transforms = obj.GetComponentsInChildren<Transform>(true);
-                            foreach(var transform in transforms)
-                                transform.gameObject.isStatic = isStatic;
-                        }
-                        break;
-                }
-            }
-        }
+                tempChildExpandContent.text = childString;
 
-        private static void DrawLockButton(Rect rect) {
-            using(new ProfilerSample("Lock toggle")) {
-                var locked = (currentGameObject.hideFlags & HideFlags.NotEditable) != 0;
-
-                GUI.changed = false;
-                GUI.backgroundColor = locked ? Styles.backgroundColorEnabled : Styles.backgroundColorDisabled;
-                GUI.Toggle(rect, locked, Styles.lockContent, Styles.lockToggleStyle);
-
-                if(!GUI.changed)
-                    return;
-
-                var selectedObjects = GetSelectedObjectsAndCurrent();
-                var changeMode = Utility.AskChangeModeIfNecessary(selectedObjects, Preferences.LockAskMode.Value, "Lock Object",
-                    "Do you want to " + (!locked ? "lock" : "unlock") + " the children objects as well?");
-
-                switch(changeMode) {
-                    case ChildrenChangeMode.ObjectOnly:
-                        foreach(var obj in selectedObjects)
-                            if(!locked)
-                                Utility.LockObject(obj);
-                            else
-                                Utility.UnlockObject(obj);
-                        break;
-
-                    case ChildrenChangeMode.ObjectAndChildren:
-                        foreach(var obj in selectedObjects)
-                            foreach(var transform in obj.GetComponentsInChildren<Transform>(true))
-                                if(!locked)
-                                    Utility.LockObject(transform.gameObject);
-                                else
-                                    Utility.UnlockObject(transform.gameObject);
-                        break;
-                }
-
-                InternalEditorUtility.RepaintAllViews();
-            }
-        }
-
-        private static void DrawActiveButton(Rect rect) {
-            using(new ProfilerSample("Active toggle")) {
-                GUI.changed = false;
-                GUI.backgroundColor = currentGameObject.activeSelf ? Styles.backgroundColorEnabled : Styles.backgroundColorDisabled;
-                GUI.Toggle(rect, currentGameObject.activeSelf, Styles.activeContent, Styles.activeToggleStyle);
-
-                if(GUI.changed) {
-                    var objs = GetSelectedObjectsAndCurrent();
-                    var active = !currentGameObject.activeSelf;
-
-                    Undo.RecordObjects(objs.ToArray(), currentGameObject.activeSelf ? "Disabled GameObject" : "Enabled Gameobject");
-
-                    foreach(var obj in objs)
-                        obj.SetActive(active);
-                }
-            }
-        }
-
-        private static void DrawIcon(Rect rect) {
-            using(new ProfilerSample("Icon")) {
-                var content = EditorGUIUtility.ObjectContent(currentGameObject, typeof(GameObject));
-
-                if(!content.image)
-                    return;
-
-                content.tooltip = Preferences.Tooltips ? "Change Icon" : string.Empty;
-                content.text = string.Empty;
-
-                rect.yMin++;
-                rect.xMin++;
-
-                GUI.changed = false;
-                GUI.Button(rect, content, EditorStyles.label);
-
-                if(!GUI.changed)
-                    return;
-
-                Undo.RegisterFullObjectHierarchyUndo(currentGameObject, "Icon Changed");
-                Utility.ShowIconSelector(currentGameObject, rect, true);
-            }
-        }
-
-        private static void DrawPrefabApply(Rect rect) {
-            using(new ProfilerSample("Prefab apply button")) {
-                var isPrefab = PrefabUtility.GetPrefabType(currentGameObject) == PrefabType.PrefabInstance;
-
-                GUI.contentColor = isPrefab ? Styles.backgroundColorEnabled : Styles.backgroundColorDisabled;
-
-                if(GUI.Button(rect, Styles.prefabApplyContent, Styles.applyPrefabStyle))
-                    if(isPrefab) {
-                        var selected = Selection.instanceIDs;
-                        Selection.activeGameObject = currentGameObject;
-                        EditorApplication.ExecuteMenuItem("GameObject/Apply Changes To Prefab");
-                        Selection.instanceIDs = selected;
-                    }
-                    else {
-                        var path = EditorUtility.SaveFilePanelInProject("Save prefab", "New Prefab", "prefab", "Save the selected prefab");
-                        if(path.Length > 0)
-                            PrefabUtility.CreatePrefab(path, currentGameObject, ReplacePrefabOptions.ConnectToPrefab);
-                    }
-
-                GUI.contentColor = Color.white;
-            }
-        }
-
-        private static void DrawLayer(Rect rect) {
-            using(new ProfilerSample("Layer")) {
-                GUI.changed = false;
-
-                EditorGUI.LabelField(rect, Styles.layerContent);
-                var layer = EditorGUI.LayerField(rect, currentGameObject.layer, Styles.layerStyle);
-
-                if(GUI.changed)
-                    Utility.ChangeLayerAndAskForChildren(GetSelectedObjectsAndCurrent(), layer);
-            }
-        }
-
-        private static void DrawTag(Rect rect) {
-            using(new ProfilerSample("Tag")) {
-                GUI.changed = false;
-
-                EditorGUI.LabelField(rect, Styles.tagContent);
-                var tag = EditorGUI.TagField(rect, Styles.tagContent, currentGameObject.tag, Styles.tagStyle);
-
-                if(GUI.changed && tag != currentGameObject.tag)
-                    Utility.ChangeTagAndAskForChildren(GetSelectedObjectsAndCurrent(), tag);
+                using(new GUIBackgroundColor(Styles.childToggleColor))
+                    Styles.newToggleStyle.Draw(rect, tempChildExpandContent, false, false, expanded, false);
             }
         }
 
         private static void DrawHorizontalSeparator(Rect rect) {
-            using(new ProfilerSample("Horizontal separator")) {
+            if(Preferences.LineSize < 1 || Preferences.LineColor.Value.a <= ALPHA_THRESHOLD || !IsRepaintEvent)
+                return;
+
+            using(ProfilerSample.Get()) {
                 rect.xMin = 0f;
                 rect.xMax = rect.xMax + 50f;
-                rect.yMax = rect.yMin + 1f;
+                rect.yMin -= Preferences.LineSize / 2;
+                rect.yMax = rect.yMin + Preferences.LineSize;
 
-                var count = Mathf.Max(100, (lastRect.y - rect.y) / lastRect.height);
+                EditorGUI.DrawRect(rect, Preferences.LineColor);
+
+                if(!IsFirstVisible)
+                    return;
+
+                rect.y = FinalRect.y - Preferences.LineSize / 2;
+
+                var height = ReflectionHelper.HierarchyWindowInstance.position.height;
+                var count = (height - FinalRect.y) / FinalRect.height;
+
+                if(FinalRect.height <= 0f)
+                    count = 100f;
 
                 for(var i = 0; i < count; i++) {
-                    rect.y += lastRect.height;
-                    EditorGUI.DrawRect(rect, Styles.lineColor);
+                    rect.y += RawRect.height;
+                    EditorGUI.DrawRect(rect, Preferences.LineColor);
                 }
             }
         }
 
         private static void ColorSort(Rect rect) {
-            using(new ProfilerSample("Colored sort")) {
+            if(!IsRepaintEvent)
+                return;
+
+            using(ProfilerSample.Get()) {
                 rect.xMin = 0f;
                 rect.xMax = rect.xMax + 50f;
 
-                var count = Mathf.Max(100, (lastRect.y - rect.y) / lastRect.height);
+                var color = Utility.OverlayColors(GetRowTint(), GetRowLayerTint());
+
+                if(color.a > ALPHA_THRESHOLD)
+                    EditorGUI.DrawRect(rect, color);
+
+                if(!IsFirstVisible)
+                    return;
+
+                rect.y = FinalRect.y;
+
+                var height = ReflectionHelper.HierarchyWindowInstance.position.height;
+                var count = (height - FinalRect.y) / FinalRect.height;
+
+                if(FinalRect.height <= 0f)
+                    count = 100f;
 
                 for(var i = 0; i < count; i++) {
-                    if(rect.y / 16f % 2 < 1f)
-                        EditorGUI.DrawRect(rect, Styles.sortColor);
-                    rect.y += rect.height;
+                    rect.y += RawRect.height;
+                    color = GetRowTint(rect);
+
+                    if(color.a > ALPHA_THRESHOLD)
+                        EditorGUI.DrawRect(rect, color);
                 }
             }
         }
 
         private static void DrawTree(Rect rect) {
-            using(new ProfilerSample("Hierarchy tree")) {
+            if(!Preferences.Tree || !IsGameObject || !IsRepaintEvent)
+                return;
+
+            using(ProfilerSample.Get())
+            using(new GUIColor(CurrentColor)) {
                 rect.xMin -= 14f;
                 rect.xMax = rect.xMin + 14f;
 
-                GUI.color = currentColor;
-
-                if(currentGameObject.transform.childCount == 0 && currentGameObject.transform.parent) {
-                    if(Utility.LastInHierarchy(currentGameObject.transform))
+                if(CurrentGameObject.transform.childCount == 0 && CurrentGameObject.transform.parent)
+                    if(Utility.LastInHierarchy(CurrentGameObject.transform))
                         GUI.DrawTexture(rect, Styles.treeEndTexture);
                     else
                         GUI.DrawTexture(rect, Styles.treeMiddleTexture);
-                }
 
-                var parent = currentGameObject.transform.parent;
+                var parent = CurrentGameObject.transform.parent;
 
                 for(rect.x -= 14f; rect.xMin > 0f && parent && parent.parent; rect.x -= 14f) {
-                    GUI.color = Utility.GetHierarchyColor(parent.parent);
                     if(!Utility.LastInHierarchy(parent))
-                        GUI.DrawTexture(rect, Styles.treeLineTexture);
+                        using(new GUIColor(Utility.GetHierarchyColor(parent.parent)))
+                            GUI.DrawTexture(rect, Styles.treeLineTexture);
                     parent = parent.parent;
                 }
-
-                GUI.color = Color.white;
             }
         }
 
-        private static void GetGameObjectWarnings() {
-            using(new ProfilerSample("Retrieve warnings")) {
-                List<LogEntry> contextEntries;
+        private static void CalculateIconsWidth() {
+            using(ProfilerSample.Get()) {
+                LeftIconsWidth = 0f;
+                RightIconsWidth = 0f;
 
-                goLogs = string.Empty;
-                goWarnings = string.Empty;
-                goErrors = string.Empty;
-
-                var components = currentGameObject.GetComponents<MonoBehaviour>();
-
-                for(var i = 0; i < components.Length; i++)
-                    if(!components[i]) {
-                        goWarnings += "Missing mono behaviour\n";
-                        break;
-                    }
-
-                if(LogEntry.ReferencedObjects.TryGetValue(currentGameObject, out contextEntries)) {
-                    var count = contextEntries.Count;
-
-                    for(var i = 0; i < count; i++)
-                        if(goLogs.Length < 150 && contextEntries[i].HasMode(EntryMode.ScriptingLog))
-                            goLogs += contextEntries[i] + "\n";
-                        else if(goWarnings.Length < 150 && contextEntries[i].HasMode(EntryMode.ScriptingWarning))
-                            goWarnings += contextEntries[i] + "\n";
-                        else if(goErrors.Length < 150 && contextEntries[i].HasMode(EntryMode.ScriptingError))
-                            goErrors += contextEntries[i] + "\n";
-                }
-
-                if(goLogs.Length > 0)
-                    warningsIconCount++;
-                if(goWarnings.Length > 0)
-                    warningsIconCount++;
-                if(goErrors.Length > 0)
-                    warningsIconCount++;
-            }
-        }
-
-        private static void DrawWarnings(Rect rect) {
-            var labelSize = EditorStyles.label.CalcSize(new GUIContent(currentGameObject.name)).x;
-
-            rect.xMin += labelSize;
-            rect.xMin = Math.Min(rect.xMax - (Preferences.DrawOrder.Count + warningsIconCount) * rect.height - CalcMiniLabelSize().x - 5f - Preferences.Offset, rect.xMin);
-            rect.height = 17f;
-            rect.xMax = rect.xMin + rect.height;
-
-            if(goLogs.Length > 0) {
-                tempTooltipContent.tooltip = goLogs;
-                GUI.DrawTexture(rect, Styles.infoIcon, ScaleMode.ScaleToFit);
-                EditorGUI.LabelField(rect, tempTooltipContent);
-                rect.x += rect.width;
-            }
-            if(goWarnings.Length > 0) {
-                tempTooltipContent.tooltip = goWarnings;
-                GUI.DrawTexture(rect, Styles.warningIcon, ScaleMode.ScaleToFit);
-                EditorGUI.LabelField(rect, tempTooltipContent);
-                rect.x += rect.width;
-            }
-            if(goErrors.Length > 0) {
-                tempTooltipContent.tooltip = goErrors;
-                GUI.DrawTexture(rect, Styles.errorIcon, ScaleMode.ScaleToFit);
-                EditorGUI.LabelField(rect, tempTooltipContent);
-                rect.x += rect.width;
-            }
-        }
-
-        private static void DoTrailing(Rect rect) {
-            using(new ProfilerSample("Trailing")) {
-                var size = Styles.labelNormal.CalcSize(new GUIContent(currentGameObject.name));
-
-                rect.xMax -= (Preferences.DrawOrder.Count + warningsIconCount) * rect.height + CalcMiniLabelSize().x + Preferences.Offset;
-
-                if(size.x < rect.width)
+                if(!IsGameObject || !IsRepaintEvent)
                     return;
 
-                rect.yMin += 2f;
-                rect.xMin = rect.xMax - 18f;
-                rect.xMax = rawRect.xMax;
+                foreach(var icon in Preferences.RightIcons.Value)
+                    RightIconsWidth += icon.Width;
 
-                EditorGUI.DrawRect(rect, Styles.normalColor * Utility.PlaymodeTint);
-                if(Preferences.ColorSeparator && rect.y / 16f % 2 <= 1f)
-                    EditorGUI.DrawRect(rect, Styles.sortColor * Utility.PlaymodeTint);
-                if(Selection.gameObjects.Contains(currentGameObject))
-                    EditorGUI.DrawRect(rect, Utility.HierarchyFocused ? Styles.selectedFocusedColor : Styles.selectedUnfocusedColor);
+                foreach(var icon in Preferences.LeftIcons.Value)
+                    LeftIconsWidth += icon.Width;
+            }
+        }
 
-                GUI.contentColor = currentColor;
-                EditorGUI.LabelField(rect, "...");
-                GUI.contentColor = Color.white;
-
+        private static void DrawLeftSideIcons(Rect rect) {
+            if(!IsGameObject || LeftIconsWidth == 0f)
                 return;
+
+            using(ProfilerSample.Get()) {
+                rect.xMin += LabelSize;
+                rect.xMin = Math.Min(rect.xMax - RightIconsWidth - LeftIconsWidth - CalcMiniLabelSize() - 5f - Preferences.Offset, rect.xMin);
+
+                foreach(var icon in Preferences.LeftIcons.Value)
+                    try {
+                        rect.xMax = rect.xMin + icon.Width;
+                        icon.DoGUI(rect);
+                        rect.xMin = rect.xMax;
+                    }
+                    catch(Exception e) {
+                        Debug.LogException(e);
+                        Preferences.ForceDisableButton(icon);
+                    }
+            }
+        }
+
+        private static float DoTrailing(Rect rect) {
+            if(!IsRepaintEvent || !Preferences.Trailing || !IsGameObject)
+                return rect.xMax;
+
+            using(ProfilerSample.Get()) {
+                tempGameObjectNameContent.text = CurrentGameObject.name;
+
+                var size = CurrentStyle.CalcSize(tempGameObjectNameContent);
+                var iconsWidth = RightIconsWidth + LeftIconsWidth + CalcMiniLabelSize() + Preferences.Offset;
+
+                if(size.x < rect.width - iconsWidth + 15f)
+                    return rect.xMax;
+
+                rect.yMin += 2f;
+                rect.xMin = rect.xMax - iconsWidth - 18f;
+
+                if(Selection.gameObjects.Contains(CurrentGameObject))
+                    EditorGUI.DrawRect(rect, ReflectionHelper.HierarchyFocused ? Styles.selectedFocusedColor : Styles.selectedUnfocusedColor);
+                else
+                    EditorGUI.DrawRect(rect, Styles.normalColor);
+
+                rect.x -= 16f;
+                rect.yMin -= 1f;
+                rect.yMax -= 3f;
+
+                EditorGUI.LabelField(rect, trailingContent, CurrentStyle);
+
+                return rect.xMin + 28f;
             }
         }
 
         private static void TagMiniLabel(ref Rect rect) {
-            Styles.miniLabelStyle.fontSize = Preferences.SmallerMiniLabel ? 8 : 9;
-            rect.xMin -= Styles.miniLabelStyle.CalcSize(new GUIContent(currentGameObject.tag)).x;
-            var tag = EditorGUI.TagField(rect, currentGameObject.tag, Styles.miniLabelStyle);
+            if(Event.current.type == EventType.Layout)
+                return;
 
-            if(GUI.changed)
-                Utility.ChangeTagAndAskForChildren(GetSelectedObjectsAndCurrent(), tag);
-        }
-
-        private static void LayerMiniLabel(ref Rect rect) {
-            Styles.miniLabelStyle.fontSize = Preferences.SmallerMiniLabel ? 8 : 9;
-            rect.xMin -= Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(currentGameObject.layer))).x;
-            var layer = EditorGUI.LayerField(rect, currentGameObject.layer, Styles.miniLabelStyle);
-
-            if(GUI.changed)
-                Utility.ChangeLayerAndAskForChildren(GetSelectedObjectsAndCurrent(), layer);
-        }
-
-        private static void DrawMiniLabel(ref Rect rect) {
-            using(new ProfilerSample("Mini label")) {
-                rect.x -= rect.height + 4f;
-                rect.xMin += 15f;
-
-                GUI.contentColor = currentColor;
+            using(ProfilerSample.Get())
+            using(new GUIContentColor(CurrentColor * new Color(1f, 1f, 1f, CurrentGameObject.tag == UNTAGGED ? Styles.backgroundColorDisabled.a : Styles.backgroundColorEnabled.a))) {
                 GUI.changed = false;
+                Styles.miniLabelStyle.fontSize = Preferences.SmallerMiniLabel ? 8 : 9;
 
-                switch(Preferences.LabelType.Value) {
-                    case MiniLabelType.Tag:
-                        if(hasTag)
-                            TagMiniLabel(ref rect);
-                        break;
+                rect.xMin -= Styles.miniLabelStyle.CalcSize(new GUIContent(CurrentGameObject.tag)).x;
 
-                    case MiniLabelType.Layer:
-                        if(hasLayer)
-                            LayerMiniLabel(ref rect);
-                        break;
+                var tag = EditorGUI.TagField(rect, CurrentGameObject.tag, Styles.miniLabelStyle);
 
-                    case MiniLabelType.LayerOrTag:
-                        if(hasLayer)
-                            LayerMiniLabel(ref rect);
-                        else if(hasTag)
-                            TagMiniLabel(ref rect);
-                        break;
-
-                    case MiniLabelType.TagOrLayer:
-                        if(hasTag)
-                            TagMiniLabel(ref rect);
-                        else if(hasLayer)
-                            LayerMiniLabel(ref rect);
-                        break;
-                }
-
-                GUI.contentColor = Color.white;
+                if(GUI.changed)
+                    Icons.Tag.ChangeTagAndAskForChildren(GetSelectedObjectsAndCurrent(), tag);
             }
         }
 
-        private static Vector2 CalcMiniLabelSize() {
-            using(new ProfilerSample("Calculating mini label size"))
-                switch(Preferences.LabelType.Value) {
+        private static void LayerMiniLabel(ref Rect rect) {
+            if(Event.current.type == EventType.Layout)
+                return;
+
+            using(ProfilerSample.Get())
+            using(new GUIContentColor(CurrentColor * new Color(1f, 1f, 1f, CurrentGameObject.layer == UNLAYERED ? Styles.backgroundColorDisabled.a : Styles.backgroundColorEnabled.a))) {
+                GUI.changed = false;
+                Styles.miniLabelStyle.fontSize = Preferences.SmallerMiniLabel ? 8 : 9;
+
+                rect.xMin -= Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(CurrentGameObject.layer))).x;
+
+                var layer = EditorGUI.LayerField(rect, CurrentGameObject.layer, Styles.miniLabelStyle);
+
+                if(GUI.changed)
+                    Icons.Layer.ChangeLayerAndAskForChildren(GetSelectedObjectsAndCurrent(), layer);
+            }
+        }
+
+        private static void DrawMiniLabel(ref Rect rect) {
+            if(Preferences.MiniLabelType.Value == MiniLabelType.None || !IsGameObject)
+                return;
+
+            rect.x -= 3f;
+
+            using(ProfilerSample.Get())
+                switch(Preferences.MiniLabelType.Value) {
                     case MiniLabelType.Tag:
-                        if(hasTag)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(currentGameObject.tag));
+                        if(HasTag)
+                            TagMiniLabel(ref rect);
                         break;
 
                     case MiniLabelType.Layer:
-                        if(hasLayer)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(currentGameObject.layer)));
-                        break;
-
-                    case MiniLabelType.LayerOrTag:
-                        if(hasLayer)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(currentGameObject.layer)));
-                        else if(hasTag)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(currentGameObject.tag));
+                        if(HasLayer)
+                            LayerMiniLabel(ref rect);
                         break;
 
                     case MiniLabelType.TagOrLayer:
-                        if(hasTag)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(currentGameObject.tag));
-                        else if(hasLayer)
-                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(currentGameObject.layer)));
+                        if(HasTag)
+                            TagMiniLabel(ref rect);
+                        else if(HasLayer)
+                            LayerMiniLabel(ref rect);
+                        break;
+
+                    case MiniLabelType.LayerOrTag:
+                        if(HasLayer)
+                            LayerMiniLabel(ref rect);
+                        else if(HasTag)
+                            TagMiniLabel(ref rect);
+                        break;
+
+                    case MiniLabelType.TagAndLayer:
+                        if(HasTag && HasLayer || !Preferences.CentralizeMiniLabelWhenPossible) {
+                            var topRect = rect;
+                            var bottomRect = rect;
+
+                            topRect.yMax = RawRect.yMax - RawRect.height / 2f;
+                            bottomRect.yMin = RawRect.yMin + RawRect.height / 2f;
+
+                            if(HasTag)
+                                TagMiniLabel(ref topRect);
+                            if(HasLayer)
+                                LayerMiniLabel(ref bottomRect);
+
+                            rect.xMin = Mathf.Min(topRect.xMin, bottomRect.xMin);
+                        }
+                        else if(HasLayer)
+                            LayerMiniLabel(ref rect);
+                        else if(HasTag)
+                            TagMiniLabel(ref rect);
+
+                        break;
+
+                    case MiniLabelType.LayerAndTag:
+                        if(HasTag && HasLayer || !Preferences.CentralizeMiniLabelWhenPossible) {
+                            var topRect = rect;
+                            var bottomRect = rect;
+
+                            topRect.yMax = RawRect.yMax - RawRect.height / 2f;
+                            bottomRect.yMin = RawRect.yMin + RawRect.height / 2f;
+
+                            if(HasLayer)
+                                LayerMiniLabel(ref topRect);
+                            if(HasTag)
+                                TagMiniLabel(ref bottomRect);
+
+                            rect.xMin = Mathf.Min(topRect.xMin, bottomRect.xMin);
+                        }
+                        else if(HasLayer)
+                            LayerMiniLabel(ref rect);
+                        else if(HasTag)
+                            TagMiniLabel(ref rect);
+
                         break;
                 }
-
-            return Vector2.zero;
         }
 
-        private static void DrawTooltip(Rect rect) {
-            using(new ProfilerSample("Tooltips")) {
-                if(dragSelection != null)
+        private static float CalcMiniLabelSize() {
+            Styles.miniLabelStyle.fontSize = Preferences.SmallerMiniLabel ? 8 : 9;
+
+            using(ProfilerSample.Get())
+                switch(Preferences.MiniLabelType.Value) {
+                    case MiniLabelType.Tag:
+                        if(HasTag)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(CurrentGameObject.tag)).x;
+                        else
+                            return 0f;
+
+                    case MiniLabelType.Layer:
+                        if(HasLayer)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(CurrentGameObject.layer))).x;
+                        else
+                            return 0f;
+
+                    case MiniLabelType.TagOrLayer:
+                        if(HasTag)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(CurrentGameObject.tag)).x;
+                        else if(HasLayer)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(CurrentGameObject.layer))).x;
+                        else
+                            return 0f;
+
+                    case MiniLabelType.LayerOrTag:
+                        if(HasLayer)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(CurrentGameObject.layer))).x;
+                        else if(HasTag)
+                            return Styles.miniLabelStyle.CalcSize(new GUIContent(CurrentGameObject.tag)).x;
+                        else
+                            return 0f;
+
+                    case MiniLabelType.TagAndLayer:
+                    case MiniLabelType.LayerAndTag:
+                        var tagSize = 0f;
+                        var layerSize = 0f;
+
+                        if(HasTag)
+                            tagSize = Styles.miniLabelStyle.CalcSize(new GUIContent(CurrentGameObject.tag)).x;
+                        if(HasLayer)
+                            layerSize = Styles.miniLabelStyle.CalcSize(new GUIContent(LayerMask.LayerToName(CurrentGameObject.layer))).x;
+
+                        return Mathf.Max(tagSize, layerSize);
+
+                    default:
+                        return 0f;
+                }
+        }
+
+        private static void DrawTooltip(Rect rect, float fullTrailingWidth) {
+            if(!Preferences.Tooltips || !IsGameObject || !IsRepaintEvent)
+                return;
+
+            using(ProfilerSample.Get()) {
+                if(DragSelection != null)
                     return;
 
-                rect.xMax = rect.xMin;
-                rect.xMin = 0f;
+                rect.xMax = Mathf.Min(fullTrailingWidth, rect.xMin + LabelSize);
 
-                tempTooltipContent.tooltip = string.Format("{0}\nTag: {1}\nLayer: {2}", currentGameObject.name, currentGameObject.tag, LayerMask.LayerToName(currentGameObject.layer));
+                if(!rect.Contains(Event.current.mousePosition))
+                    return;
+
+                var tooltip = new StringBuilder(100);
+
+                tooltip.AppendLine(CurrentGameObject.name);
+                tooltip.AppendFormat("\nTag: {0}", CurrentGameObject.tag);
+                tooltip.AppendFormat("\nLayer: {0}", LayerMask.LayerToName(CurrentGameObject.layer));
+
+                if(GameObjectUtility.GetStaticEditorFlags(CurrentGameObject) != 0)
+                    tooltip.AppendFormat("\nStatic: {0}", Utility.EnumFlagsToString(GameObjectUtility.GetStaticEditorFlags(CurrentGameObject)));
+
+                tooltip.AppendLine();
+                tooltip.AppendLine();
+
+                var components = CurrentGameObject.GetComponents<Component>();
+
+                foreach(var component in components)
+                    if(component is Transform)
+                        continue;
+                    else if(component)
+                        tooltip.AppendLine(ObjectNames.GetInspectorTitle(component));
+                    else
+                        tooltip.AppendLine("Missing Component");
+
+                tempTooltipContent.tooltip = tooltip.ToString().TrimEnd('\n', '\r');
                 EditorGUI.LabelField(rect, tempTooltipContent);
             }
         }
 
         private static void DoSelection(Rect rect) {
-            using(new ProfilerSample("Enhanced selection")) {
+            if(!Preferences.EnhancedSelection || Event.current.button != 1) {
+                DragSelection = null;
+                return;
+            }
+
+            using(ProfilerSample.Get()) {
                 rect.xMin = 0f;
 
-                if(isFirstVisible && Event.current.button == 1)
-                    switch(Event.current.type) {
-                        case EventType.MouseDrag:
-                            if(dragSelection == null) {
-                                dragSelection = new List<GameObject>();
-                                selectionStart = Event.current.mousePosition;
-                                selectionRect = new Rect();
-                            }
+                switch(Event.current.type) {
+                    case EventType.MouseDrag:
+                        if(!IsFirstVisible)
+                            return;
 
-                            selectionRect = new Rect() {
-                                xMin = Mathf.Min(Event.current.mousePosition.x, selectionStart.x),
-                                yMin = Mathf.Min(Event.current.mousePosition.y, selectionStart.y),
-                                xMax = Mathf.Max(Event.current.mousePosition.x, selectionStart.x),
-                                yMax = Mathf.Max(Event.current.mousePosition.y, selectionStart.y)
-                            };
+                        if(DragSelection == null) {
+                            DragSelection = new List<Object>();
+                            SelectionStart = Event.current.mousePosition;
+                            SelectionRect = new Rect();
+                        }
 
-                            if(Event.current.control)
-                                dragSelection.AddRange(Selection.gameObjects);
+                        SelectionRect = new Rect() {
+                            xMin = Mathf.Min(Event.current.mousePosition.x, SelectionStart.x),
+                            yMin = Mathf.Min(Event.current.mousePosition.y, SelectionStart.y),
+                            xMax = Mathf.Max(Event.current.mousePosition.x, SelectionStart.x),
+                            yMax = Mathf.Max(Event.current.mousePosition.y, SelectionStart.y)
+                        };
 
-                            Selection.objects = dragSelection.ToArray();
+                        if(Event.current.control || Event.current.command)
+                            DragSelection.AddRange(Selection.objects);
+
+                        Selection.objects = DragSelection.ToArray();
+                        Event.current.Use();
+                        break;
+
+                    case EventType.MouseUp:
+                        if(DragSelection != null)
                             Event.current.Use();
+                        DragSelection = null;
+                        break;
+
+                    case EventType.Repaint:
+                        if(DragSelection == null || !IsFirstVisible)
                             break;
 
-                        case EventType.MouseUp:
-                            if(dragSelection != null)
-                                Event.current.Use();
-                            dragSelection = null;
-                            break;
-                    }
+                        var scrollRect = new Rect();
 
-                if(dragSelection != null && isGameObject)
-                    if(dragSelection.Contains(currentGameObject) && !selectionRect.Overlaps(rect))
-                        dragSelection.Remove(currentGameObject);
-                    else if(!dragSelection.Contains(currentGameObject) && selectionRect.Overlaps(rect))
-                        dragSelection.Add(currentGameObject);
+                        if(Event.current.mousePosition.y > FinalRect.y) {
+                            scrollRect = FinalRect;
+                            scrollRect.y += scrollRect.height;
+                        }
+                        else if(Event.current.mousePosition.y < RawRect.y) {
+                            scrollRect = RawRect;
+                            scrollRect.y -= scrollRect.height;
+                        }
+                        else
+                            break;
+
+                        SelectionRect = new Rect() {
+                            xMin = Mathf.Min(scrollRect.xMax, SelectionStart.x),
+                            yMin = Mathf.Min(scrollRect.yMax, SelectionStart.y),
+                            xMax = Mathf.Max(scrollRect.xMax, SelectionStart.x),
+                            yMax = Mathf.Max(scrollRect.yMax, SelectionStart.y)
+                        };
+
+                        if(Event.current.control || Event.current.command)
+                            DragSelection.AddRange(Selection.objects);
+
+                        Selection.objects = DragSelection.ToArray();
+
+                        GUI.ScrollTowards(scrollRect, 9f);
+                        EditorApplication.RepaintHierarchyWindow();
+                        break;
+
+                    case EventType.Layout:
+                        if(DragSelection != null && IsGameObject)
+                            if(!SelectionRect.Overlaps(rect) && DragSelection.Contains(CurrentGameObject))
+                                DragSelection.Remove(CurrentGameObject);
+                            else if(SelectionRect.Overlaps(rect) && !DragSelection.Contains(CurrentGameObject))
+                                DragSelection.Add(CurrentGameObject);
+                        break;
+                }
             }
+        }
+
+        public static Color GetRowTint() {
+            return GetRowTint(RawRect);
+        }
+
+        public static Color GetRowTint(Rect rect) {
+            using(ProfilerSample.Get())
+                if(rect.y / RawRect.height % 2 >= 0.5f)
+                    return Preferences.OddRowColor;
+                else
+                    return Preferences.EvenRowColor;
+        }
+
+        public static Color GetRowLayerTint() {
+            return GetRowLayerTint(RawRect, CurrentGameObject);
+        }
+
+        public static Color GetRowLayerTint(Rect rect, GameObject go) {
+            using(ProfilerSample.Get())
+                if(go)
+                    return Array.Find<LayerColor>(Preferences.PerLayerRowColors, layer => { return layer == go.layer; }).color;
+                else
+                    return Color.clear;
         }
 
         private static List<GameObject> GetSelectedObjectsAndCurrent() {
             if(!Preferences.ChangeAllSelected || Selection.gameObjects.Length <= 1)
-                return new List<GameObject> { currentGameObject };
+                return new List<GameObject> { CurrentGameObject };
 
             var selection = new List<GameObject>(Selection.gameObjects);
 
@@ -696,8 +643,8 @@ namespace EnhancedHierarchy {
                 if(EditorUtility.IsPersistent(selection[i]))
                     selection.RemoveAt(i);
 
-            if(!selection.Contains(currentGameObject))
-                selection.Add(currentGameObject);
+            if(!selection.Contains(CurrentGameObject))
+                selection.Add(CurrentGameObject);
 
             selection.Remove(null);
             return selection;
