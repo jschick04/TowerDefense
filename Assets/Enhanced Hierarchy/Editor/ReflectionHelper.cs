@@ -81,9 +81,9 @@ namespace EnhancedHierarchy {
                     return hierarchyWindow;
 
                 if(lastHierarchyField != null)
-                    return (EditorWindow)lastHierarchyField.GetValue(null);
+                    return hierarchyWindow = (EditorWindow)lastHierarchyField.GetValue(null);
 
-                return (EditorWindow)Resources.FindObjectsOfTypeAll(hierarchyWindowType).FirstOrDefault();
+                return hierarchyWindow = (EditorWindow)Resources.FindObjectsOfTypeAll(hierarchyWindowType).FirstOrDefault();
             }
         }
         public static bool HierarchyFocused { get { return EditorWindow.focusedWindow && EditorWindow.focusedWindow.GetType() == hierarchyWindowType; } }

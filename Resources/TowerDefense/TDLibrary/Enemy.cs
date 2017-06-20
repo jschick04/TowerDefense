@@ -3,20 +3,32 @@
 namespace TDLibrary {
 
   public class Enemy : MonoBehaviour {
-    public float speed = 10f;
+    public float moveSpeed = 10f;
 
-    private Transform _target;
-    private int _wavepointIndex = 0;
+    private Transform _waypointTarget;
+    private int _waypointIndex;
+
+    private void GetNextWaypoint() {
+      if (_waypointIndex >= Waypoints.points.Length - 1) {
+        Destroy(gameObject);
+        return;
+      }
+
+      _waypointIndex++;
+      _waypointTarget = Waypoints.points[_waypointIndex];
+    }
 
     private void Start() {
-      _target = Waypoints.waypoints[0];
+      _waypointTarget = Waypoints.points[0];
     }
 
     private void Update() {
-      Vector3 direction = _target.position - transform.position;
-      transform.Translate(direction.normalized * speed * Time.deltaTime, Space.World);
+      Vector3 direction = _waypointTarget.position - transform.position;
+      transform.Translate(direction.normalized * moveSpeed * Time.deltaTime, Space.World);
 
-
+      if (Vector3.Distance(transform.position, _waypointTarget.position) <= 0.4f) {
+        GetNextWaypoint();
+      }
     }
   }
 

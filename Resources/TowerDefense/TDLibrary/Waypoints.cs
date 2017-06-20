@@ -3,12 +3,12 @@
 namespace TDLibrary {
 
   public class Waypoints : MonoBehaviour {
-    public static Transform[] waypoints;
+    public static Transform[] points;
 
     private void Awake() {
-      waypoints = new Transform[transform.childCount];
-      for (int i = 0; i < waypoints.Length; i++) {
-        waypoints[i] = transform.GetChild(i);
+      points = new Transform[transform.childCount];
+      for (int i = 0; i < points.Length; i++) {
+        points[i] = transform.GetChild(i);
       }
     }
   }

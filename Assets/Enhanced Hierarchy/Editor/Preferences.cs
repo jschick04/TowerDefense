@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
@@ -182,13 +180,13 @@ namespace EnhancedHierarchy {
             return menu;
         }
 
-        private static ReorderableList GenerateReordableListForIcons(Type iconType, IPrefItem preferenceItem) {
-            var result = new ReorderableList((IList)preferenceItem.Value, iconType, true, true, true, true);
+        private static ReorderableList GenerateReordableListForIcons<T>(PrefItem<T[]> preferenceItem) {
+            var result = new ReorderableList(preferenceItem.Value.ToList(), typeof(T), true, true, true, true);
 
             result.elementHeight = 18f;
-            result.drawHeaderCallback += rect => EditorGUI.LabelField(rect, preferenceItem.Content, EditorStyles.boldLabel);
-            result.drawElementCallback += (rect, index, focused, active) => EditorGUI.LabelField(rect, result.list[index].ToString());
-            result.onAddDropdownCallback += (rect, newList) => (iconType == typeof(RightSideIcon) ? RightIconsMenu : LeftIconsMenu).DropDown(rect);
+            result.drawHeaderCallback = rect => { rect.xMin -= EditorGUI.indentLevel * 16f; EditorGUI.LabelField(rect, preferenceItem, EditorStyles.boldLabel); };
+            result.drawElementCallback = (rect, index, focused, active) => EditorGUI.LabelField(rect, result.list[index].ToString());
+            result.onAddDropdownCallback = (rect, newList) => (typeof(T) == typeof(RightSideIcon) ? RightIconsMenu : LeftIconsMenu).DropDown(rect);
 
             return result;
         }
@@ -233,13 +231,14 @@ namespace EnhancedHierarchy {
             RightIcons = new PrefItem<RightSideIcon[]>("RightIcons", defaultRightIcons, "Right Side Icons", "The icons that appear to the rightmost of the hierarchy");
             PerLayerRowColors = new PrefItem<LayerColor[]>("PerLayerRowColors", defaultLayerColors, "Per layer row color", "Set a row color for each different layer");
 
-            leftIconsList = GenerateReordableListForIcons(typeof(LeftSideIcon), LeftIcons);
-            rightIconsList = GenerateReordableListForIcons(typeof(RightSideIcon), RightIcons);
+            leftIconsList = GenerateReordableListForIcons(LeftIcons);
+            rightIconsList = GenerateReordableListForIcons(RightIcons);
 
-            rowColorsList = new ReorderableList(PerLayerRowColors.Value, typeof(LayerColor), false, false, true, true);
-            rowColorsList.elementHeight = 18f;
-            rowColorsList.drawHeaderCallback += rect => { rect.xMin -= EditorGUI.indentLevel * 16f; EditorGUI.LabelField(rect, PerLayerRowColors, EditorStyles.boldLabel); };
-            rowColorsList.drawElementCallback += (rect, index, focused, active) => {
+            rowColorsList = GenerateReordableListForIcons(PerLayerRowColors);
+            rowColorsList.draggable = false;
+            rowColorsList.onAddDropdownCallback = null;
+
+            rowColorsList.drawElementCallback = (rect, index, focused, active) => {
                 rect.xMin -= EditorGUI.indentLevel * 16f;
 
                 var value = (LayerColor)rowColorsList.list[index];

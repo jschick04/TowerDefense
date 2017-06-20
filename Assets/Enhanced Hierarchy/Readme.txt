@@ -36,6 +36,9 @@ Q: My game fail to compile if I use the extension, how to fix it?
 A: The extension must be placed inside a folder called Editor because it uses the UnityEditor API.
 
 CHANGELOG:
+Version 2.2.2:
+- Fixed bug that wouldn't allow the user to remove or add an icon on settings.
+
 Version 2.2.1:
 - Fixed optional module not saving settings.
 
