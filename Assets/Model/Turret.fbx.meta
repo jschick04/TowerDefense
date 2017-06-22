@@ -1,0 +1,140 @@
+fileFormatVersion: 2
+guid: e6a9a4d68027e304fa1380de616e9ed2
+timeCreated: 1498161635
+licenseType: Pro
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: BackLeg
+    100002: BackLeg 1
+    100004: BackLegBase
+    100006: BackLegBase 1
+    100008: Base
+    100010: BaseLegJoint
+    100012: BaseLegJoint 1
+    100014: BaseLegMount
+    100016: BaseLegMount 1
+    100018: FrontLeg
+    100020: FrontLegBase
+    100022: Leg_BackLeft
+    100024: Leg_BackRight
+    100026: Leg_Front
+    100028: //RootNode
+    400000: BackLeg
+    400002: BackLeg 1
+    400004: BackLegBase
+    400006: BackLegBase 1
+    400008: Base
+    400010: BaseLegJoint
+    400012: BaseLegJoint 1
+    400014: BaseLegMount
+    400016: BaseLegMount 1
+    400018: FrontLeg
+    400020: FrontLegBase
+    400022: Leg_BackLeft
+    400024: Leg_BackRight
+    400026: Leg_Front
+    400028: //RootNode
+    2300000: BackLeg
+    2300002: BackLeg 1
+    2300004: BackLegBase
+    2300006: BackLegBase 1
+    2300008: Base
+    2300010: BaseLegJoint
+    2300012: BaseLegJoint 1
+    2300014: BaseLegMount
+    2300016: BaseLegMount 1
+    2300018: FrontLeg
+    2300020: FrontLegBase
+    3300000: BackLeg
+    3300002: BackLeg 1
+    3300004: BackLegBase
+    3300006: BackLegBase 1
+    3300008: Base
+    3300010: BaseLegJoint
+    3300012: BaseLegJoint 1
+    3300014: BaseLegMount
+    3300016: BaseLegMount 1
+    3300018: FrontLeg
+    3300020: FrontLegBase
+    4300000: BaseLegJoint
+    4300002: BaseLegMount
+    4300004: BackLegBase
+    4300006: BackLeg
+    4300008: FrontLegBase
+    4300010: FrontLeg
+    4300012: BaseLegJoint
+    4300014: BaseLegMount
+    4300016: BackLegBase
+    4300018: BackLeg
+    4300020: Base
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
