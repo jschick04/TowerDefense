@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TDLibrary.Managers {
+namespace TDLibrary.Manager {
 
   public class GameManager : MonoBehaviour {
     public Transform enemyPrefab;

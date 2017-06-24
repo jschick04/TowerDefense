@@ -64,8 +64,9 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Bullet.cs" />
     <Compile Include="Enemy.cs" />
-    <Compile Include="Managers\GameManager.cs" />
+    <Compile Include="Manager\GameManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Turret.cs" />
     <Compile Include="Waypoints.cs" />

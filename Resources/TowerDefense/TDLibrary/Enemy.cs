@@ -5,8 +5,8 @@ namespace TDLibrary {
   public class Enemy : MonoBehaviour {
     public float moveSpeed = 10f;
 
-    private Transform _waypointTarget;
     private int _waypointIndex;
+    private Transform _waypointTarget;
 
     private void GetNextWaypoint() {
       if (_waypointIndex >= Waypoints.points.Length - 1) {
