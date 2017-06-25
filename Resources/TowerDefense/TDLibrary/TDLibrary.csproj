@@ -65,6 +65,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Bullet.cs" />
+    <Compile Include="Controller\CameraController.cs" />
     <Compile Include="Enemy.cs" />
     <Compile Include="Manager\BuildManager.cs" />
     <Compile Include="Manager\GameManager.cs" />
