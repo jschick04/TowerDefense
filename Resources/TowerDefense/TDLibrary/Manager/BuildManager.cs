@@ -5,12 +5,16 @@ namespace TDLibrary.Manager {
   public class BuildManager : MonoBehaviour {
     public static BuildManager instance;
 
-    [SerializeField]
-    private GameObject _basicTurretPrefab;
+    public GameObject basicTurretPrefab;
+
     private GameObject _turretToBuild;
 
     public GameObject GetTurretToBuild() {
       return _turretToBuild;
+    }
+
+    public void SetTurretToBuild(GameObject turret) {
+      _turretToBuild = turret;
     }
 
     private void Awake() {
@@ -19,9 +23,6 @@ namespace TDLibrary.Manager {
       }
       instance = this;
     }
-
-    private void Start() {
-      _turretToBuild = _basicTurretPrefab;
-    }
   }
+
 }

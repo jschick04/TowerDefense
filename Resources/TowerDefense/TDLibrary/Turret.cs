@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using TDLibrary.Manager;
+using UnityEngine;
 
 namespace TDLibrary {
 
   public class Turret : MonoBehaviour {
-    public string enemyTag = "Enemy";
     public float turnSpeed = 10f;
 
     [SerializeField]
@@ -24,8 +25,8 @@ namespace TDLibrary {
     #endregion
 
     private void Attack() {
-      var bulletGO = (GameObject)Instantiate(_bulletPrefab, _firePosition.position, _firePosition.rotation);
-      var bullet = bulletGO.GetComponent<Bullet>();
+      GameObject bulletObject = Instantiate(_bulletPrefab, _firePosition.position, _firePosition.rotation);
+      var bullet = bulletObject.GetComponent<Bullet>();
 
       if (bullet != null) {
         bullet.Track(_currentTarget);
@@ -42,27 +43,27 @@ namespace TDLibrary {
     }
 
     private void Update() {
+      _attackCooldown = _attackCooldown <= 0f ? 0f : _attackCooldown -= Time.deltaTime;
+
       if (_currentTarget == null) {
         return;
       }
 
-      var direction = _currentTarget.position - transform.position;
-      var lookRotation = Quaternion.LookRotation(direction);
-      var rotation = Quaternion.Lerp(_turretBase.rotation, lookRotation, Time.deltaTime * turnSpeed).eulerAngles;
+      Vector3 direction = _currentTarget.position - transform.position;
+      Quaternion lookRotation = Quaternion.LookRotation(direction);
+      Vector3 rotation = Quaternion.Lerp(_turretBase.rotation, lookRotation, Time.deltaTime * turnSpeed).eulerAngles;
       _turretBase.rotation = Quaternion.Euler(0f, rotation.y, 0f);
 
       if (_attackCooldown <= 0f) {
         Attack();
         _attackCooldown = 1f / attackSpeed;
       }
-
-      _attackCooldown -= Time.deltaTime;
     }
 
     private void UpdateTarget() {
-      GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+      List<Enemy> enemies = EnemyManager.instance.Enemies;
       float shortestDistance = Mathf.Infinity;
-      GameObject closestEnemy = null;
+      Enemy closestEnemy = null;
 
       foreach (var enemy in enemies) {
         float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);

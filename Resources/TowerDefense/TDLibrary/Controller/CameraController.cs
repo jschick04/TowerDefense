@@ -7,8 +7,8 @@ namespace TDLibrary.Controller {
     public float panSpeed = 30f;
     public float scrollSpeed = 5f;
 
-    private readonly float _maxY = 80f;
-    private readonly float _minY = 10f;
+    private const float MaxY = 80f;
+    private const float MinY = 10f;
 
     private void Update() {
       if (Input.GetKey(KeyCode.W) || Input.mousePosition.y >= Screen.height - panBoarderThickness) {
@@ -24,9 +24,9 @@ namespace TDLibrary.Controller {
         transform.Translate(Vector3.right * panSpeed * Time.deltaTime, Space.World);
       }
 
-      var pos = transform.position;
+      Vector3 pos = transform.position;
       pos.y -= Input.GetAxis("Mouse ScrollWheel") * 1000 * scrollSpeed * Time.deltaTime;
-      pos.y = Mathf.Clamp(pos.y, _minY, _maxY);
+      pos.y = Mathf.Clamp(pos.y, MinY, MaxY);
       transform.position = pos;
     }
   }

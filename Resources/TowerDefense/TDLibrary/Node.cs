@@ -1,9 +1,11 @@
 ﻿using TDLibrary.Manager;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace TDLibrary {
 
   public class Node : MonoBehaviour {
+    private BuildManager _buildManager;
     [SerializeField]
     private Color _hoverColor;
     [SerializeField]
@@ -13,6 +15,14 @@ namespace TDLibrary {
     private GameObject _turret;
 
     private void OnMouseDown() {
+      if (EventSystem.current.IsPointerOverGameObject()) {
+        return;
+      }
+
+      if (_buildManager.GetTurretToBuild() == null) {
+        return;
+      }
+
       if (_turret != null) {
         Debug.Log("Cannot build here");
         return;
@@ -23,6 +33,14 @@ namespace TDLibrary {
     }
 
     private void OnMouseEnter() {
+      if (EventSystem.current.IsPointerOverGameObject()) {
+        return;
+      }
+
+      if (_buildManager.GetTurretToBuild() == null) {
+        return;
+      }
+
       _rend.material.color = _hoverColor;
     }
 
@@ -31,6 +49,7 @@ namespace TDLibrary {
     }
 
     private void Start() {
+      _buildManager = BuildManager.instance;
       _rend = GetComponent<Renderer>();
       _startColor = _rend.material.color;
     }

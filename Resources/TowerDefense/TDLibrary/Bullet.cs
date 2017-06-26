@@ -14,7 +14,7 @@ namespace TDLibrary {
     }
 
     private void HitTarget() {
-      var effect = Instantiate(_impactEffect, transform.position, transform.rotation);
+      GameObject effect = Instantiate(_impactEffect, transform.position, transform.rotation);
       Destroy(effect, 2f);
       Destroy(gameObject);
       Destroy(_target.gameObject);
@@ -26,8 +26,8 @@ namespace TDLibrary {
         return;
       }
 
-      var direction = _target.position - transform.position;
-      var distanceThisFrame = speed * Time.deltaTime;
+      Vector3 direction = _target.position - transform.position;
+      float distanceThisFrame = speed * Time.deltaTime;
 
       if (direction.magnitude <= distanceThisFrame) {
         HitTarget();

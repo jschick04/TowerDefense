@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TDLibrary.Manager;
+using UnityEngine;
 
 namespace TDLibrary {
 
@@ -7,6 +8,15 @@ namespace TDLibrary {
 
     private int _waypointIndex;
     private Transform _waypointTarget;
+
+    public void ManagedUpdate() {
+      Vector3 direction = _waypointTarget.position - transform.position;
+      transform.Translate(direction.normalized * moveSpeed * Time.deltaTime, Space.World);
+
+      if (Vector3.Distance(transform.position, _waypointTarget.position) <= 0.4f) {
+        GetNextWaypoint();
+      }
+    }
 
     private void GetNextWaypoint() {
       if (_waypointIndex >= Waypoints.points.Length - 1) {
@@ -18,17 +28,16 @@ namespace TDLibrary {
       _waypointTarget = Waypoints.points[_waypointIndex];
     }
 
-    private void Start() {
-      _waypointTarget = Waypoints.points[0];
+    private void OnDisable() {
+      EnemyManager.instance.Unregister(this);
     }
 
-    private void Update() {
-      Vector3 direction = _waypointTarget.position - transform.position;
-      transform.Translate(direction.normalized * moveSpeed * Time.deltaTime, Space.World);
+    private void OnEnable() {
+      EnemyManager.instance.Register(this);
+    }
 
-      if (Vector3.Distance(transform.position, _waypointTarget.position) <= 0.4f) {
-        GetNextWaypoint();
-      }
+    private void Start() {
+      _waypointTarget = Waypoints.points[0];
     }
   }
 
