@@ -155,7 +155,7 @@ GameObject:
   - component: {fileID: 4973442267159898}
   - component: {fileID: 114141307274481726}
   m_Layer: 0
-  m_Name: TempTurret
+  m_Name: TempRocket
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1327,9 +1327,8 @@ MonoBehaviour:
   m_Script: {fileID: 105452020, guid: 9f96654e37543244cafda34f9c957e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyTag: Enemy
   turnSpeed: 10
-  _bulletPrefab: {fileID: 1828516982567460, guid: f9a8f924e0c147c4a9cf20979f7adce9,
+  _bulletPrefab: {fileID: 1624579656709106, guid: d81b2ff16ef426540a601b51203a8b70,
     type: 2}
   _firePosition: {fileID: 4359266441741548}
   _turretBase: {fileID: 4113306762528226}

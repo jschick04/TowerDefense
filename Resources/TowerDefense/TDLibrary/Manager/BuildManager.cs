@@ -6,14 +6,25 @@ namespace TDLibrary.Manager {
     public static BuildManager instance;
 
     public GameObject basicTurretPrefab;
+    public GameObject rocketTurretPrefab;
 
-    private GameObject _turretToBuild;
+    private TurretBlueprint _turretToBuild;
 
-    public GameObject GetTurretToBuild() {
-      return _turretToBuild;
+    public bool CanBuild { get { return _turretToBuild != null; } }
+
+    public void BuildTurretOn(Node node) {
+      if (PlayerManager.money < _turretToBuild.cost) {
+        Debug.Log("Not enough money to build");
+        return;
+      }
+
+      PlayerManager.money -= _turretToBuild.cost;
+      node.Turret = Instantiate(_turretToBuild.prefab, node.GetBuildPosition(), Quaternion.identity);
+
+      Debug.Log($"Money left: {PlayerManager.money}");
     }
 
-    public void SetTurretToBuild(GameObject turret) {
+    public void SelectTurretToBuild(TurretBlueprint turret) {
       _turretToBuild = turret;
     }
 

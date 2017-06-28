@@ -12,24 +12,28 @@ namespace TDLibrary {
     private Vector3 _offset;
     private Renderer _rend;
     private Color _startColor;
-    private GameObject _turret;
+
+    public GameObject Turret { get; set; }
+
+    public Vector3 GetBuildPosition() {
+      return transform.position + _offset;
+    }
 
     private void OnMouseDown() {
       if (EventSystem.current.IsPointerOverGameObject()) {
         return;
       }
 
-      if (_buildManager.GetTurretToBuild() == null) {
+      if (!_buildManager.CanBuild) {
         return;
       }
 
-      if (_turret != null) {
+      if (Turret != null) {
         Debug.Log("Cannot build here");
         return;
       }
 
-      GameObject turretToBuild = BuildManager.instance.GetTurretToBuild();
-      _turret = Instantiate(turretToBuild, transform.position + _offset, transform.rotation);
+      _buildManager.BuildTurretOn(this);
     }
 
     private void OnMouseEnter() {
@@ -37,7 +41,7 @@ namespace TDLibrary {
         return;
       }
 
-      if (_buildManager.GetTurretToBuild() == null) {
+      if (!_buildManager.CanBuild) {
         return;
       }
 

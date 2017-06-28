@@ -6,9 +6,23 @@ namespace TDLibrary {
   public class Shop : MonoBehaviour {
     private BuildManager _buildmanager;
 
-    public void PurchaseBasicTurret() {
+    #region TurretTypes
+
+    [SerializeField]
+    private TurretBlueprint _basicTurret;
+    [SerializeField]
+    private TurretBlueprint _rocketTurret;
+
+    #endregion
+
+    public void SelectBasicTurret() {
       Debug.Log("Purchased basic turret");
-      _buildmanager.SetTurretToBuild(_buildmanager.basicTurretPrefab);
+      _buildmanager.SelectTurretToBuild(_basicTurret);
+    }
+
+    public void SelectRocketTurret() {
+      Debug.Log("Purchased rocket turret");
+      _buildmanager.SelectTurretToBuild(_rocketTurret);
     }
 
     private void Start() {

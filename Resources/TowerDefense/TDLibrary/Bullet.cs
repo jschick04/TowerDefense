@@ -3,8 +3,8 @@
 namespace TDLibrary {
 
   public class Bullet : MonoBehaviour {
+    public float explosionRadius;
     public float speed = 70f;
-
     [SerializeField]
     private GameObject _impactEffect;
     private Transform _target;
@@ -13,11 +13,35 @@ namespace TDLibrary {
       _target = target;
     }
 
+    private void Damage(Transform enemy) {
+      Destroy(enemy.gameObject);
+    }
+
+    private void Explode() {
+      Collider[] targets = Physics.OverlapSphere(transform.position, explosionRadius);
+      foreach (var target in targets) {
+        if (target.CompareTag("Enemy")) {
+          Damage(target.transform);
+        }
+      }
+    }
+
     private void HitTarget() {
       GameObject effect = Instantiate(_impactEffect, transform.position, transform.rotation);
-      Destroy(effect, 2f);
+      Destroy(effect, 5f);
+
+      if (explosionRadius > 0f) {
+        Explode();
+      } else {
+        Damage(_target);
+      }
+
       Destroy(gameObject);
-      Destroy(_target.gameObject);
+    }
+
+    private void OnDrawGizmosSelected() {
+      Gizmos.color = Color.blue;
+      Gizmos.DrawWireSphere(transform.position, explosionRadius);
     }
 
     private void Update() {
@@ -35,6 +59,7 @@ namespace TDLibrary {
       }
 
       transform.Translate(direction.normalized * distanceThisFrame, Space.World);
+      transform.LookAt(_target);
     }
   }
 

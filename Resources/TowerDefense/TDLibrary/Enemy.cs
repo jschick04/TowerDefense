@@ -34,9 +34,6 @@ namespace TDLibrary {
 
     private void OnEnable() {
       EnemyManager.instance.Register(this);
-    }
-
-    private void Start() {
       _waypointTarget = Waypoints.points[0];
     }
   }
