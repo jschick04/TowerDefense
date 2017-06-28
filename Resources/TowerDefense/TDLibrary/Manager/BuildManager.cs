@@ -12,6 +12,8 @@ namespace TDLibrary.Manager {
 
     public bool CanBuild { get { return _turretToBuild != null; } }
 
+    public bool IsAffordable { get { return PlayerManager.money >= _turretToBuild.cost; } }
+
     public void BuildTurretOn(Node node) {
       if (PlayerManager.money < _turretToBuild.cost) {
         Debug.Log("Not enough money to build");

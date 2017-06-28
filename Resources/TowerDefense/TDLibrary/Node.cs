@@ -9,10 +9,11 @@ namespace TDLibrary {
     [SerializeField]
     private Color _hoverColor;
     [SerializeField]
+    private Color _insufficientFundsColor;
+    [SerializeField]
     private Vector3 _offset;
     private Renderer _rend;
     private Color _startColor;
-
     public GameObject Turret { get; set; }
 
     public Vector3 GetBuildPosition() {
@@ -45,7 +46,11 @@ namespace TDLibrary {
         return;
       }
 
-      _rend.material.color = _hoverColor;
+      if (_buildManager.IsAffordable) {
+        _rend.material.color = _hoverColor;
+      } else {
+        _rend.material.color = _insufficientFundsColor;
+      }
     }
 
     private void OnMouseExit() {
