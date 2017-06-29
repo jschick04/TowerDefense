@@ -5,9 +5,12 @@ namespace TDLibrary.Manager {
   public class BuildManager : MonoBehaviour {
     public static BuildManager instance;
 
-    public GameObject basicTurretPrefab;
-    public GameObject rocketTurretPrefab;
-
+    [SerializeField]
+    private GameObject _basicTurretPrefab;
+    [SerializeField]
+    private GameObject _buildEffectPrefab;
+    [SerializeField]
+    private GameObject _rocketTurretPrefab;
     private TurretBlueprint _turretToBuild;
 
     public bool CanBuild { get { return _turretToBuild != null; } }
@@ -22,6 +25,9 @@ namespace TDLibrary.Manager {
 
       PlayerManager.money -= _turretToBuild.cost;
       node.Turret = Instantiate(_turretToBuild.prefab, node.GetBuildPosition(), Quaternion.identity);
+
+      GameObject effect = Instantiate(_buildEffectPrefab, node.GetBuildPosition(), Quaternion.identity);
+      Destroy(effect, 5f);
 
       Debug.Log($"Money left: {PlayerManager.money}");
     }

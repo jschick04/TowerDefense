@@ -37,7 +37,7 @@ namespace TDLibrary.Manager {
 
       _waveCountdown -= Time.deltaTime;
       _waveCountdown = Mathf.Clamp(_waveCountdown, 0f, Mathf.Infinity);
-      waveCountdownText.text = string.Format("{0:00.00}", _waveCountdown);
+      waveCountdownText.text = string.Format("{0:00.0}", _waveCountdown);
     }
   }
 
