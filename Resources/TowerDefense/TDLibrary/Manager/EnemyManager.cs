@@ -31,8 +31,8 @@ namespace TDLibrary.Manager {
     }
 
     private void Update() {
-      for (int i = 0; i < Enemies.Count; i++) {
-        Enemies[i].ManagedUpdate();
+      foreach (Enemy enemy in Enemies) {
+        enemy.ManagedUpdate();
       }
     }
   }

@@ -6,16 +6,12 @@ namespace TDLibrary.Manager {
     public static BuildManager instance;
 
     [SerializeField]
-    private GameObject _basicTurretPrefab;
-    [SerializeField]
     private GameObject _buildEffectPrefab;
-    [SerializeField]
-    private GameObject _rocketTurretPrefab;
     private TurretBlueprint _turretToBuild;
 
-    public bool CanBuild { get { return _turretToBuild != null; } }
+    public bool CanBuild => _turretToBuild != null;
 
-    public bool IsAffordable { get { return PlayerManager.money >= _turretToBuild.cost; } }
+    public bool IsAffordable => PlayerManager.money >= _turretToBuild.cost;
 
     public void BuildTurretOn(Node node) {
       if (PlayerManager.money < _turretToBuild.cost) {
@@ -40,6 +36,7 @@ namespace TDLibrary.Manager {
       if (instance != null) {
         Destroy(this);
       }
+
       instance = this;
     }
   }

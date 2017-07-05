@@ -1,5 +1,6 @@
 ﻿using TDLibrary.Manager;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TDLibrary {
 
@@ -11,6 +12,8 @@ namespace TDLibrary {
     [SerializeField]
     private TurretBlueprint _basicTurret;
     [SerializeField]
+    private TurretBlueprint _laserTurret;
+    [SerializeField]
     private TurretBlueprint _rocketTurret;
 
     #endregion
@@ -18,6 +21,11 @@ namespace TDLibrary {
     public void SelectBasicTurret() {
       Debug.Log("Purchased basic turret");
       _buildmanager.SelectTurretToBuild(_basicTurret);
+    }
+
+    public void SelectLaserTurret() {
+      Debug.Log("Purchased laster turret");
+      _buildmanager.SelectTurretToBuild(_laserTurret);
     }
 
     public void SelectRocketTurret() {
