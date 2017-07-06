@@ -1,4 +1,5 @@
-﻿using TDLibrary.Manager;
+﻿using System.Collections.Generic;
+using TDLibrary.Manager;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,35 +7,40 @@ namespace TDLibrary {
 
   public class Shop : MonoBehaviour {
     private BuildManager _buildmanager;
-
-    #region TurretTypes
-
     [SerializeField]
-    private TurretBlueprint _basicTurret;
+    private CanvasRenderer _itemTemplate;
     [SerializeField]
-    private TurretBlueprint _laserTurret;
-    [SerializeField]
-    private TurretBlueprint _rocketTurret;
+    private List<Turret> _turretPrefabs;
 
-    #endregion
+    private void CreateMenuItem(Turret turret) {
+      CanvasRenderer button = Instantiate(_itemTemplate, transform);
+      Text[] menuItemText = button.GetComponentsInChildren<Text>();
 
-    public void SelectBasicTurret() {
-      Debug.Log("Purchased basic turret");
-      _buildmanager.SelectTurretToBuild(_basicTurret);
-    }
+      foreach (var itemText in menuItemText) {
+        switch (itemText.name) {
+          case "Item":
+            itemText.text = turret.Name;
+            break;
 
-    public void SelectLaserTurret() {
-      Debug.Log("Purchased laster turret");
-      _buildmanager.SelectTurretToBuild(_laserTurret);
-    }
+          case "Cost":
+            itemText.text = $"$ {turret.turretType.cost}";
+            break;
 
-    public void SelectRocketTurret() {
-      Debug.Log("Purchased rocket turret");
-      _buildmanager.SelectTurretToBuild(_rocketTurret);
+          default:
+            break;
+        }
+      }
+
+      var clickEvent = button.GetComponent<Button>();
+      clickEvent.onClick.AddListener(() => _buildmanager.SelectTurretToBuild(turret));
     }
 
     private void Start() {
       _buildmanager = BuildManager.instance;
+
+      foreach (var prefab in _turretPrefabs) {
+        CreateMenuItem(prefab);
+      }
     }
   }
 

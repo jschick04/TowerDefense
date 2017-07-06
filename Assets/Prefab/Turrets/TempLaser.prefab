@@ -571,8 +571,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1544651718250300}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.00029120315, y: 0.98823726, z: -0.0018819241, w: 0.15291682}
+  m_LocalPosition: {x: 20.201437, y: 1.9962417, z: 35.076637}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 4973442267159898}
@@ -714,7 +714,7 @@ Transform:
   - {fileID: 4566852216453102}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &23047013858789596
 MeshRenderer:
   m_ObjectHideFlags: 1
@@ -1359,17 +1359,10 @@ MonoBehaviour:
   m_Script: {fileID: 105452020, guid: 9f96654e37543244cafda34f9c957e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cost: 0
-  prefab: {fileID: 1499299118256770}
-  turnSpeed: 10
+  turretType: {fileID: 11400000, guid: 7169bf4329c82a44ab0c69b93d5bb9bb, type: 2}
   firePosition: {fileID: 4359266441741548}
   turretBase: {fileID: 4113306762528226}
-  attackRange: 20
-  attackSpeed: 1
-  _bulletPrefab: {fileID: 0}
-  _laserEffect: {fileID: 198536911225775840}
-  _lineRenderer: {fileID: 120599855960524480}
-  _useLaser: 1
+  _name: Laser
 --- !u!120 &120599855960524480
 LineRenderer:
   m_ObjectHideFlags: 1
@@ -1403,8 +1396,8 @@ LineRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Positions:
-  - {x: 0, y: 3, z: 0}
-  - {x: 0, y: 3, z: 5}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   m_Parameters:
     serializedVersion: 2
     widthMultiplier: 0.3

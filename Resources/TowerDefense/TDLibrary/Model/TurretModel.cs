@@ -1,24 +1,51 @@
-﻿using TDLibrary.Manager;
+﻿using System.Collections.Generic;
+using TDLibrary.Manager;
+using TDLibrary.Model.TurretType;
 using UnityEngine;
 
 namespace TDLibrary.Model {
 
   public abstract class TurretModel : MonoBehaviour {
-    public int cost;
-    public GameObject prefab;
-    public float turnSpeed = 10f;
+    [SerializeField]
+    internal BaseTurret turretType;
 
+    protected float attackCooldown;
     protected Transform currentTarget;
     [SerializeField]
     protected Transform firePosition;
     [SerializeField]
     protected Transform turretBase;
 
+    [SerializeField]
+    private string _name;
     private TurretManager _turretManager;
 
-    protected abstract void Attack();
+    public string Name => _name;
 
     public abstract void ManagedUpdate();
+
+    protected virtual void Attack() {
+      turretType.Attack(firePosition, currentTarget);
+    }
+
+    protected void FindClosestTarget() {
+      List<Enemy> enemies = EnemyManager.instance.Enemies;
+      float shortestDistance = Mathf.Infinity;
+      Enemy closestEnemy = null;
+
+      foreach (var enemy in enemies) {
+        float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
+
+        if (distanceToEnemy < shortestDistance) {
+          shortestDistance = distanceToEnemy;
+          closestEnemy = enemy;
+        }
+
+        if (closestEnemy != null && shortestDistance <= turretType.attackRange) {
+          currentTarget = closestEnemy.transform;
+        }
+      }
+    }
 
     protected void OnDisable() {
       _turretManager.Unregister((Turret)this);
