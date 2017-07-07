@@ -29,7 +29,7 @@ namespace TDLibrary.Model {
     }
 
     protected void FindClosestTarget() {
-      List<Enemy> enemies = EnemyManager.instance.Enemies;
+      List<Enemy> enemies = EnemyManager.Instance.Enemies;
       float shortestDistance = Mathf.Infinity;
       Enemy closestEnemy = null;
 
@@ -52,7 +52,7 @@ namespace TDLibrary.Model {
     }
 
     protected void OnEnable() {
-      _turretManager = TurretManager.instance;
+      _turretManager = TurretManager.Instance;
       _turretManager.Register((Turret)this);
     }
   }

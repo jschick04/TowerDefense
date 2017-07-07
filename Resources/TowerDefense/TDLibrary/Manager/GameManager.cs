@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace TDLibrary.Manager {
 
-  public class GameManager : MonoBehaviour {
+  public class GameManager : SingletonManager<GameManager> {
     public Transform enemyPrefab;
     public Text moneyBalance;
     public Text remainingLives;
@@ -15,6 +15,8 @@ namespace TDLibrary.Manager {
     private bool _gameOver;
     private float _waveCountdown;
     private int _waveNumber;
+
+    protected GameManager() { }
 
     private void EndGame() {
       _gameOver = true;
@@ -51,7 +53,7 @@ namespace TDLibrary.Manager {
 
       _waveCountdown -= Time.deltaTime;
       _waveCountdown = Mathf.Clamp(_waveCountdown, 0f, Mathf.Infinity);
-      waveCountdownText.text = string.Format("{0:00.0}", _waveCountdown);
+      waveCountdownText.text = $"{_waveCountdown:00.0}";
     }
   }
 

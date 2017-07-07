@@ -4,31 +4,40 @@ namespace TDLibrary.Model.TurretType {
 
   [CreateAssetMenu(fileName = "Turret", menuName = "Turrets/LaserTurret")]
   public class LaserTurret : BaseTurret {
-    public ParticleSystem laserEffect;
-    public LineRenderer lineRenderer;
+    private ParticleSystem _laserEffect;
+    [SerializeField]
+    private ParticleSystem _laserEffectPrefab;
+    private LineRenderer _lineRenderer;
+    [SerializeField]
+    private LineRenderer _lineRendererPrefab;
 
     public override TurretType TurretType { get; protected set; } = TurretType.Laser;
 
     public override void Attack(Transform firePosition, Transform currentTarget) {
-      if (!lineRenderer.enabled) {
-        lineRenderer.enabled = true;
-        laserEffect.Play();
+      if (!_lineRenderer.enabled) {
+        _lineRenderer.enabled = true;
+        _laserEffect.Play();
       }
 
-      lineRenderer.SetPosition(0, firePosition.position);
-      lineRenderer.SetPosition(1, currentTarget.position);
+      _lineRenderer.SetPosition(0, firePosition.position);
+      _lineRenderer.SetPosition(1, currentTarget.position);
 
       Vector3 direction = firePosition.position - currentTarget.position;
 
-      laserEffect.transform.rotation = Quaternion.LookRotation(direction);
-      laserEffect.transform.position = currentTarget.position + direction.normalized;
+      _laserEffect.transform.rotation = Quaternion.LookRotation(direction);
+      _laserEffect.transform.position = currentTarget.position + direction.normalized;
     }
 
     public void DisableLaser() {
-      if (lineRenderer.enabled) {
-        lineRenderer.enabled = false;
-        laserEffect.Stop();
+      if (_lineRenderer.enabled) {
+        _lineRenderer.enabled = false;
+        _laserEffect.Stop();
       }
+    }
+
+    private void OnEnable() {
+      _laserEffect = Instantiate(_laserEffectPrefab);
+      _lineRenderer = Instantiate(_lineRendererPrefab);
     }
   }
 

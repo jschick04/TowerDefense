@@ -32,6 +32,7 @@ namespace TDLibrary {
           break;
 
         default:
+          Debug.LogWarning("Invalid TurretType");
           break;
       }
     }

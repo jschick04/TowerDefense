@@ -15,7 +15,7 @@ namespace TDLibrary {
     private int _waypointIndex;
     private Transform _waypointTarget;
 
-    public int Health { get { return _health; } }
+    public int Health => _health;
 
     public void ManagedUpdate() {
       Vector3 direction = _waypointTarget.position - transform.position;
@@ -54,11 +54,11 @@ namespace TDLibrary {
     }
 
     private void OnDisable() {
-      EnemyManager.instance.Unregister(this);
+      EnemyManager.Instance.Unregister(this);
     }
 
     private void OnEnable() {
-      EnemyManager.instance.Register(this);
+      EnemyManager.Instance.Register(this);
       _waypointTarget = Waypoints.points[0];
     }
 

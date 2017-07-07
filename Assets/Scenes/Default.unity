@@ -6934,8 +6934,8 @@ GameObject:
   - component: {fileID: 1127779450}
   - component: {fileID: 1127779451}
   - component: {fileID: 1127779452}
-  - component: {fileID: 1127779453}
   - component: {fileID: 1127779454}
+  - component: {fileID: 1127779453}
   - component: {fileID: 1127779455}
   m_Layer: 0
   m_Name: '@GameManager'
@@ -10657,7 +10657,7 @@ Transform:
   m_PrefabInternal: {fileID: 1692414325}
 --- !u!1 &1706682992
 GameObject:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 8
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   serializedVersion: 5
@@ -10673,7 +10673,7 @@ GameObject:
   m_IsActive: 1
 --- !u!108 &1706682993
 Light:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 9
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1706682992}
@@ -10723,7 +10723,7 @@ Light:
   m_ShadowAngle: 0
 --- !u!4 &1706682994
 Transform:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 8
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1706682992}

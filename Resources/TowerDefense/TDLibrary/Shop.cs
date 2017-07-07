@@ -36,7 +36,7 @@ namespace TDLibrary {
     }
 
     private void Start() {
-      _buildmanager = BuildManager.instance;
+      _buildmanager = BuildManager.Instance;
 
       foreach (var prefab in _turretPrefabs) {
         CreateMenuItem(prefab);

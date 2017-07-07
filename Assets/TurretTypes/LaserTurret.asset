@@ -15,7 +15,7 @@ MonoBehaviour:
   cost: 350
   prefab: {fileID: 1499299118256770, guid: 9d501e5ad7c0b9a498290c234a52cce8, type: 2}
   turnSpeed: 10
-  laserEffect: {fileID: 198536911225775840, guid: 9d501e5ad7c0b9a498290c234a52cce8,
+  _laserEffectPrefab: {fileID: 198247494503776732, guid: ea43d62fb3d0a7c478f7d2fede2ccf3e,
     type: 2}
-  lineRenderer: {fileID: 120599855960524480, guid: 9d501e5ad7c0b9a498290c234a52cce8,
+  _lineRendererPrefab: {fileID: 120174284748586404, guid: ef3f08ae100713a4bbe58cb9315517d8,
     type: 2}

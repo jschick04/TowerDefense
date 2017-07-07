@@ -2,12 +2,12 @@
 
 namespace TDLibrary.Manager {
 
-  public class BuildManager : MonoBehaviour {
-    public static BuildManager instance;
-
+  public class BuildManager : SingletonManager<BuildManager> {
     [SerializeField]
     private GameObject _buildEffectPrefab;
     private Turret _turretToBuild;
+
+    protected BuildManager() { }
 
     public bool CanBuild => _turretToBuild != null;
 
@@ -30,14 +30,6 @@ namespace TDLibrary.Manager {
 
     public void SelectTurretToBuild(Turret turret) {
       _turretToBuild = turret;
-    }
-
-    private void Awake() {
-      if (instance != null) {
-        Destroy(this);
-      }
-
-      instance = this;
     }
   }
 

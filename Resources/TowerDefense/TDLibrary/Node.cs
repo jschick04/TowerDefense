@@ -55,7 +55,7 @@ namespace TDLibrary {
     }
 
     private void Start() {
-      _buildManager = BuildManager.instance;
+      _buildManager = BuildManager.Instance;
       _rend = GetComponent<Renderer>();
       _startColor = _rend.material.color;
     }
