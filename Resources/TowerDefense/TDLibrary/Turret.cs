@@ -1,82 +1,65 @@
-﻿using System.Collections.Generic;
-using TDLibrary.Manager;
+﻿using TDLibrary.Model;
+using TDLibrary.Model.TurretType;
 using UnityEngine;
 
 namespace TDLibrary {
 
-  public class Turret : MonoBehaviour {
-    public float turnSpeed = 10f;
+  public class Turret : TurretModel {
+    public override void ManagedUpdate() {
+      attackCooldown = attackCooldown <= 0f ? 0f : attackCooldown -= Time.deltaTime;
 
-    [SerializeField]
-    private GameObject _bulletPrefab;
-    private Transform _currentTarget;
-    [SerializeField]
-    private Transform _firePosition;
-    [SerializeField]
-    private Transform _turretBase;
+      if (currentTarget == null) {
+        if (turretType.TurretType == TurretType.Laser) {
+          ((LaserTurret)turretType).DisableLaser();
+        }
 
-    #region CombatProperties
-
-    [Header("Combat Properties")]
-    public float attackRange = 15f;
-    public float attackSpeed = 1f;
-    private float _attackCooldown;
-
-    #endregion
-
-    private void Attack() {
-      GameObject bulletObject = Instantiate(_bulletPrefab, _firePosition.position, _firePosition.rotation);
-      var bullet = bulletObject.GetComponent<Bullet>();
-
-      if (bullet != null) {
-        bullet.Track(_currentTarget);
+        return;
       }
+
+      LockOnTarget();
+
+      switch (turretType.TurretType) {
+        case TurretType.Laser :
+          Attack();
+          break;
+
+        case TurretType.Bullet :
+          if (attackCooldown <= 0f) {
+            Attack();
+            attackCooldown = 1f / ((BulletTurret)turretType).attackSpeed;
+          }
+          break;
+
+        default :
+          Debug.LogWarning("Invalid TurretType");
+          break;
+      }
+    }
+
+    private void Awake() {
+      if (turretType.TurretType == TurretType.Laser) {
+        ((LaserTurret)turretType).LaserEffect = Instantiate(((LaserTurret)turretType).laserEffectPrefab,
+          gameObject.transform);
+        ((LaserTurret)turretType).LaserBeam = Instantiate(((LaserTurret)turretType).lineRendererPrefab,
+          gameObject.transform);
+      }
+    }
+
+    private void LockOnTarget() {
+      Vector3 direction = currentTarget.position - transform.position;
+      Quaternion lookRotation = Quaternion.LookRotation(direction);
+      Vector3 rotation = Quaternion.Lerp(turretBase.rotation, lookRotation, Time.deltaTime * turretType.turnSpeed)
+        .eulerAngles;
+      turretBase.rotation = Quaternion.Euler(0f, rotation.y, 0f);
     }
 
     private void OnDrawGizmosSelected() {
       Gizmos.color = Color.red;
-      Gizmos.DrawWireSphere(transform.position, attackRange);
+      Gizmos.DrawWireSphere(transform.position, turretType.attackRange);
     }
 
     private void Start() {
-      InvokeRepeating("UpdateTarget", 0f, 0.5f);
-    }
-
-    private void Update() {
-      _attackCooldown = _attackCooldown <= 0f ? 0f : _attackCooldown -= Time.deltaTime;
-
-      if (_currentTarget == null) {
-        return;
-      }
-
-      Vector3 direction = _currentTarget.position - transform.position;
-      Quaternion lookRotation = Quaternion.LookRotation(direction);
-      Vector3 rotation = Quaternion.Lerp(_turretBase.rotation, lookRotation, Time.deltaTime * turnSpeed).eulerAngles;
-      _turretBase.rotation = Quaternion.Euler(0f, rotation.y, 0f);
-
-      if (_attackCooldown <= 0f) {
-        Attack();
-        _attackCooldown = 1f / attackSpeed;
-      }
-    }
-
-    private void UpdateTarget() {
-      List<Enemy> enemies = EnemyManager.instance.Enemies;
-      float shortestDistance = Mathf.Infinity;
-      Enemy closestEnemy = null;
-
-      foreach (var enemy in enemies) {
-        float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
-
-        if (distanceToEnemy < shortestDistance) {
-          shortestDistance = distanceToEnemy;
-          closestEnemy = enemy;
-        }
-
-        if (closestEnemy != null && shortestDistance <= attackRange) {
-          _currentTarget = closestEnemy.transform;
-        }
-      }
+      InvokeRepeating(nameof(FindClosestTarget), 0f, 0.5f);
     }
   }
 

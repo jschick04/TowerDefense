@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 
 namespace TDLibrary.Manager {
 
-  public class EnemyManager : MonoBehaviour {
-    public static EnemyManager instance;
+  public class EnemyManager : SingletonManager<EnemyManager> {
+    protected EnemyManager() {
+      Enemies = new List<Enemy>();
+    }
 
-    public List<Enemy> Enemies { get; private set; }
+    public List<Enemy> Enemies { get; protected set; }
 
     public void Register(Enemy enemy) {
       if (!Enemies.Contains(enemy)) {
@@ -18,16 +19,6 @@ namespace TDLibrary.Manager {
       if (Enemies.Contains(enemy)) {
         Enemies.Remove(enemy);
       }
-    }
-
-    private void Awake() {
-      if (instance != null) {
-        Destroy(this);
-      }
-
-      instance = this;
-
-      Enemies = new List<Enemy>();
     }
 
     private void Update() {

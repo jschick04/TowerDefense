@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: c6a1b40d0ba6c5341b8ab1a51b2c1ff6
+timeCreated: 1498679141
+licenseType: Pro
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Luckiest Guy
+  fontNames:
+  - Luckiest Guy
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

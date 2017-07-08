@@ -9,6 +9,8 @@ namespace TDLibrary {
     [SerializeField]
     private Color _hoverColor;
     [SerializeField]
+    private Color _insufficientFundsColor;
+    [SerializeField]
     private Vector3 _offset;
     private Renderer _rend;
     private Color _startColor;
@@ -45,7 +47,7 @@ namespace TDLibrary {
         return;
       }
 
-      _rend.material.color = _hoverColor;
+      _rend.material.color = _buildManager.IsAffordable ? _hoverColor : _insufficientFundsColor;
     }
 
     private void OnMouseExit() {
@@ -53,7 +55,7 @@ namespace TDLibrary {
     }
 
     private void Start() {
-      _buildManager = BuildManager.instance;
+      _buildManager = BuildManager.Instance;
       _rend = GetComponent<Renderer>();
       _startColor = _rend.material.color;
     }

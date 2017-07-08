@@ -4,14 +4,24 @@ using UnityEngine.UI;
 
 namespace TDLibrary.Manager {
 
-  public class GameManager : MonoBehaviour {
+  public class GameManager : SingletonManager<GameManager> {
     public Transform enemyPrefab;
+    public Text moneyBalance;
+    public Text remainingLives;
     public Transform spawnPoint;
     public Text waveCountdownText;
-    public float waveDuration = 5f;
+    public float waveDuration = 20f;
 
-    private float _waveCountdown = 2f;
+    private bool _gameOver;
+    private float _waveCountdown;
     private int _waveNumber;
+
+    protected GameManager() { }
+
+    private void EndGame() {
+      _gameOver = true;
+      Debug.Log("Game Over!");
+    }
 
     private void SpawnEnemy() {
       Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
@@ -27,14 +37,23 @@ namespace TDLibrary.Manager {
     }
 
     private void Update() {
+      if (_gameOver) { return; }
+
+      if (PlayerManager.lives <= 0) {
+        EndGame();
+      }
+
+      moneyBalance.text = $"$ {PlayerManager.money}";
+      remainingLives.text = $"{PlayerManager.lives} Lives";
+
       if (_waveCountdown <= 0) {
         StartCoroutine(SpawnWave());
         _waveCountdown = waveDuration;
       }
 
       _waveCountdown -= Time.deltaTime;
-
-      waveCountdownText.text = Mathf.Round(_waveCountdown).ToString();
+      _waveCountdown = Mathf.Clamp(_waveCountdown, 0f, Mathf.Infinity);
+      waveCountdownText.text = $"{_waveCountdown:00.0}";
     }
   }
 

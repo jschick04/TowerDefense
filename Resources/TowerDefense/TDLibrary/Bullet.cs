@@ -5,6 +5,9 @@ namespace TDLibrary {
   public class Bullet : MonoBehaviour {
     public float explosionRadius;
     public float speed = 70f;
+
+    [SerializeField]
+    private int _damage = 50;
     [SerializeField]
     private GameObject _impactEffect;
     private Transform _target;
@@ -14,7 +17,8 @@ namespace TDLibrary {
     }
 
     private void Damage(Transform enemy) {
-      Destroy(enemy.gameObject);
+      var e = enemy.GetComponent<Enemy>();
+      e?.TakeDamage(_damage);
     }
 
     private void Explode() {
