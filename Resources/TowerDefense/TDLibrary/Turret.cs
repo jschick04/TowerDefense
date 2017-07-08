@@ -5,7 +5,6 @@ using UnityEngine;
 namespace TDLibrary {
 
   public class Turret : TurretModel {
-
     public override void ManagedUpdate() {
       attackCooldown = attackCooldown <= 0f ? 0f : attackCooldown -= Time.deltaTime;
 
@@ -20,27 +19,37 @@ namespace TDLibrary {
       LockOnTarget();
 
       switch (turretType.TurretType) {
-        case TurretType.Laser:
+        case TurretType.Laser :
           Attack();
           break;
 
-        case TurretType.Bullet:
+        case TurretType.Bullet :
           if (attackCooldown <= 0f) {
             Attack();
             attackCooldown = 1f / ((BulletTurret)turretType).attackSpeed;
           }
           break;
 
-        default:
+        default :
           Debug.LogWarning("Invalid TurretType");
           break;
+      }
+    }
+
+    private void Awake() {
+      if (turretType.TurretType == TurretType.Laser) {
+        ((LaserTurret)turretType).LaserEffect = Instantiate(((LaserTurret)turretType).laserEffectPrefab,
+          gameObject.transform);
+        ((LaserTurret)turretType).LaserBeam = Instantiate(((LaserTurret)turretType).lineRendererPrefab,
+          gameObject.transform);
       }
     }
 
     private void LockOnTarget() {
       Vector3 direction = currentTarget.position - transform.position;
       Quaternion lookRotation = Quaternion.LookRotation(direction);
-      Vector3 rotation = Quaternion.Lerp(turretBase.rotation, lookRotation, Time.deltaTime * turretType.turnSpeed).eulerAngles;
+      Vector3 rotation = Quaternion.Lerp(turretBase.rotation, lookRotation, Time.deltaTime * turretType.turnSpeed)
+        .eulerAngles;
       turretBase.rotation = Quaternion.Euler(0f, rotation.y, 0f);
     }
 

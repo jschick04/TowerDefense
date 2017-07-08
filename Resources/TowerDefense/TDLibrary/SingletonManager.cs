@@ -4,15 +4,10 @@ namespace TDLibrary {
 
   public class SingletonManager<T> : MonoBehaviour where T : MonoBehaviour {
     private static readonly object _lock = new object();
-    private static bool _applicationIsQuitting;
     private static T _instance;
 
     public static T Instance {
       get {
-        if (_applicationIsQuitting) {
-          return null;
-        }
-
         lock (_lock) {
           if (_instance == null) {
             _instance = (T)FindObjectOfType(typeof(T));
@@ -29,10 +24,6 @@ namespace TDLibrary {
           return _instance;
         }
       }
-    }
-
-    public void OnDestroy() {
-      _applicationIsQuitting = true;
     }
   }
 

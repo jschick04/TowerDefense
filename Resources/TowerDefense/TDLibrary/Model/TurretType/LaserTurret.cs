@@ -2,42 +2,56 @@
 
 namespace TDLibrary.Model.TurretType {
 
-  [CreateAssetMenu(fileName = "Turret", menuName = "Turrets/LaserTurret")]
+  [CreateAssetMenu(fileName = "Laser", menuName = "Turret Type/Laser")]
   public class LaserTurret : BaseTurret {
-    private ParticleSystem _laserEffect;
     [SerializeField]
-    private ParticleSystem _laserEffectPrefab;
-    private LineRenderer _lineRenderer;
+    internal ParticleSystem laserEffectPrefab;
     [SerializeField]
-    private LineRenderer _lineRendererPrefab;
+    internal LineRenderer lineRendererPrefab;
 
-    public override TurretType TurretType { get; protected set; } = TurretType.Laser;
+    private LineRenderer _laserBeam;
+    private ParticleSystem _laserEffect;
+
+    internal LineRenderer LaserBeam {
+      get { return _laserBeam; }
+      set {
+        if (value != null) {
+          _laserBeam = value;
+        }
+      }
+    }
+
+    internal ParticleSystem LaserEffect {
+      get { return _laserEffect; }
+      set {
+        if (value != null) {
+          _laserEffect = value;
+        }
+      }
+    }
+
+    internal override TurretType TurretType { get; } = TurretType.Laser;
 
     public override void Attack(Transform firePosition, Transform currentTarget) {
-      if (!_lineRenderer.enabled) {
-        _lineRenderer.enabled = true;
-        _laserEffect.Play();
+      if (!LaserBeam.enabled) {
+        LaserBeam.enabled = true;
+        LaserEffect.Play();
       }
 
-      _lineRenderer.SetPosition(0, firePosition.position);
-      _lineRenderer.SetPosition(1, currentTarget.position);
+      LaserBeam.SetPosition(0, firePosition.position);
+      LaserBeam.SetPosition(1, currentTarget.position);
 
       Vector3 direction = firePosition.position - currentTarget.position;
 
-      _laserEffect.transform.rotation = Quaternion.LookRotation(direction);
-      _laserEffect.transform.position = currentTarget.position + direction.normalized;
+      LaserEffect.transform.rotation = Quaternion.LookRotation(direction);
+      LaserEffect.transform.position = currentTarget.position + direction.normalized;
     }
 
     public void DisableLaser() {
-      if (_lineRenderer.enabled) {
-        _lineRenderer.enabled = false;
-        _laserEffect.Stop();
+      if (LaserBeam.enabled) {
+        LaserBeam.enabled = false;
+        LaserEffect.Stop();
       }
-    }
-
-    private void OnEnable() {
-      _laserEffect = Instantiate(_laserEffectPrefab);
-      _lineRenderer = Instantiate(_lineRendererPrefab);
     }
   }
 

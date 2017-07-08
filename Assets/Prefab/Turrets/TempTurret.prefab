@@ -1327,7 +1327,7 @@ MonoBehaviour:
   m_Script: {fileID: 105452020, guid: 9f96654e37543244cafda34f9c957e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  turretType: {fileID: 11400000, guid: afea1af0560603c48884df5757fb71f7, type: 2}
   firePosition: {fileID: 4359266441741548}
   turretBase: {fileID: 4113306762528226}
-  turretType: {fileID: 11400000, guid: bd473d06e8a8a4948b116147908aa853, type: 2}
   _name: Basic

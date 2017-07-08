@@ -13,7 +13,7 @@ namespace TDLibrary.Model.TurretType {
     public GameObject prefab;
     public float turnSpeed = 10f;
 
-    public abstract TurretType TurretType { get; protected set; }
+    internal abstract TurretType TurretType { get; }
 
     public abstract void Attack(Transform firePosition, Transform currentTarget);
   }
