@@ -10,7 +10,7 @@ namespace TDLibrary.Model {
     internal BaseTurret turretType;
 
     protected float attackCooldown;
-    protected Transform currentTarget;
+    protected Enemy currentTarget;
     [SerializeField]
     protected Transform firePosition;
     [SerializeField]
@@ -25,7 +25,9 @@ namespace TDLibrary.Model {
     public abstract void ManagedUpdate();
 
     protected virtual void Attack() {
-      turretType.Attack(firePosition, currentTarget);
+      if (currentTarget != null) {
+        turretType.Attack(firePosition, currentTarget);
+      }
     }
 
     protected void FindClosestTarget() {
@@ -41,9 +43,7 @@ namespace TDLibrary.Model {
           closestEnemy = enemy;
         }
 
-        if (closestEnemy != null && shortestDistance <= turretType.attackRange) {
-          currentTarget = closestEnemy.transform;
-        }
+        currentTarget = closestEnemy != null && shortestDistance <= turretType.attackRange ? closestEnemy : null;
       }
     }
 
@@ -56,4 +56,5 @@ namespace TDLibrary.Model {
       _turretManager.Register((Turret)this);
     }
   }
+
 }

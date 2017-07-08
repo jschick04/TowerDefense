@@ -15,7 +15,7 @@ namespace TDLibrary.Model.TurretType {
 
     internal abstract TurretType TurretType { get; }
 
-    public abstract void Attack(Transform firePosition, Transform currentTarget);
+    public abstract void Attack(Transform firePosition, Enemy currentTarget);
   }
 
 }

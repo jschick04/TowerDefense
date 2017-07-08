@@ -9,13 +9,11 @@ namespace TDLibrary.Model.TurretType {
 
     internal override TurretType TurretType { get; } = TurretType.Bullet;
 
-    public override void Attack(Transform firePosition, Transform currentTarget) {
+    public override void Attack(Transform firePosition, Enemy currentTarget) {
       GameObject bulletObject = Instantiate(bulletPrefab, firePosition.position, firePosition.rotation);
       var bullet = bulletObject.GetComponent<Bullet>();
 
-      if (bullet != null) {
-        bullet.Track(currentTarget);
-      }
+      bullet?.Track(currentTarget.transform);
     }
   }
 

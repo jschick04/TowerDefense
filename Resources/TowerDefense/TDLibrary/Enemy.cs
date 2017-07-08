@@ -8,15 +8,16 @@ namespace TDLibrary {
 
     [SerializeField]
     private GameObject _deathEffect;
+    private EnemyManager _enemyManager;
     [SerializeField]
-    private int _health = 100;
+    private float _health = 100;
     [SerializeField]
     private int _rewardAmount = 25;
+    private float _startSpeed;
     private int _waypointIndex;
     private Transform _waypointTarget;
-    private EnemyManager _enemyManager;
 
-    public int Health => _health;
+    public float Health => _health;
 
     public void ManagedUpdate() {
       Vector3 direction = _waypointTarget.position - transform.position;
@@ -25,14 +26,20 @@ namespace TDLibrary {
       if (Vector3.Distance(transform.position, _waypointTarget.position) <= 0.4f) {
         GetNextWaypoint();
       }
+
+      moveSpeed = _startSpeed;
     }
 
-    public void TakeDamage(int damage) {
+    public void TakeDamage(float damage) {
       _health -= damage;
 
       if (Health <= 0) {
         Die();
       }
+    }
+
+    internal void Slow(float slowPercent) {
+      moveSpeed = _startSpeed * (1f - slowPercent);
     }
 
     private void Die() {
@@ -59,6 +66,7 @@ namespace TDLibrary {
     }
 
     private void OnEnable() {
+      _startSpeed = moveSpeed;
       _enemyManager = EnemyManager.Instance;
       _enemyManager.Register(this);
       _waypointTarget = Waypoints.points[0];

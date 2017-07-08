@@ -9,9 +9,12 @@ namespace TDLibrary.Model.TurretType {
     [SerializeField]
     internal LineRenderer lineRendererPrefab;
 
+    private readonly int _damageOverTime = 30;
     private Light _impactLight;
     private LineRenderer _laserBeam;
     private ParticleSystem _laserEffect;
+    [SerializeField]
+    private float _slowPercent = .5f;
 
     internal LineRenderer LaserBeam {
       get { return _laserBeam; }
@@ -35,7 +38,7 @@ namespace TDLibrary.Model.TurretType {
 
     private Light ImpactLight => _impactLight ?? (_impactLight = LaserEffect.GetComponentInChildren<Light>());
 
-    public override void Attack(Transform firePosition, Transform currentTarget) {
+    public override void Attack(Transform firePosition, Enemy currentTarget) {
       if (!LaserBeam.enabled) {
         LaserBeam.enabled = true;
         LaserEffect.Play();
@@ -45,12 +48,15 @@ namespace TDLibrary.Model.TurretType {
       }
 
       LaserBeam.SetPosition(0, firePosition.position);
-      LaserBeam.SetPosition(1, currentTarget.position);
+      LaserBeam.SetPosition(1, currentTarget.transform.position);
 
-      Vector3 direction = firePosition.position - currentTarget.position;
+      Vector3 direction = firePosition.position - currentTarget.transform.position;
 
       LaserEffect.transform.rotation = Quaternion.LookRotation(direction);
-      LaserEffect.transform.position = currentTarget.position + direction.normalized;
+      LaserEffect.transform.position = currentTarget.transform.position + direction.normalized;
+
+      currentTarget.TakeDamage(_damageOverTime * Time.deltaTime);
+      currentTarget.Slow(_slowPercent);
     }
 
     /// <summary>Disables all laser visual effects</summary>

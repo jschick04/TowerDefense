@@ -46,7 +46,7 @@ namespace TDLibrary {
     }
 
     private void LockOnTarget() {
-      Vector3 direction = currentTarget.position - transform.position;
+      Vector3 direction = currentTarget.transform.position - transform.position;
       Quaternion lookRotation = Quaternion.LookRotation(direction);
       Vector3 rotation = Quaternion.Lerp(turretBase.rotation, lookRotation, Time.deltaTime * turretType.turnSpeed)
         .eulerAngles;
