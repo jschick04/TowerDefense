@@ -5,9 +5,14 @@ namespace TDLibrary {
   public class SingletonManager<T> : MonoBehaviour where T : MonoBehaviour {
     private static readonly object _lock = new object();
     private static T _instance;
+    private static bool _stoppingApplication;
 
     public static T Instance {
       get {
+        if (_stoppingApplication) {
+          return null;
+        }
+
         lock (_lock) {
           if (_instance == null) {
             _instance = (T)FindObjectOfType(typeof(T));
@@ -24,6 +29,10 @@ namespace TDLibrary {
           return _instance;
         }
       }
+    }
+
+    private void OnDisable() {
+      _stoppingApplication = true;
     }
   }
 

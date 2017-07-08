@@ -9,6 +9,7 @@ namespace TDLibrary.Model.TurretType {
     [SerializeField]
     internal LineRenderer lineRendererPrefab;
 
+    private Light _impactLight;
     private LineRenderer _laserBeam;
     private ParticleSystem _laserEffect;
 
@@ -32,10 +33,15 @@ namespace TDLibrary.Model.TurretType {
 
     internal override TurretType TurretType { get; } = TurretType.Laser;
 
+    private Light ImpactLight => _impactLight ?? (_impactLight = LaserEffect.GetComponentInChildren<Light>());
+
     public override void Attack(Transform firePosition, Transform currentTarget) {
       if (!LaserBeam.enabled) {
         LaserBeam.enabled = true;
         LaserEffect.Play();
+        if (_impactLight != null) {
+          ImpactLight.enabled = true;
+        }
       }
 
       LaserBeam.SetPosition(0, firePosition.position);
@@ -47,10 +53,14 @@ namespace TDLibrary.Model.TurretType {
       LaserEffect.transform.position = currentTarget.position + direction.normalized;
     }
 
+    /// <summary>Disables all laser visual effects</summary>
     public void DisableLaser() {
       if (LaserBeam.enabled) {
         LaserBeam.enabled = false;
         LaserEffect.Stop();
+        if (_impactLight != null) {
+          ImpactLight.enabled = false;
+        }
       }
     }
   }

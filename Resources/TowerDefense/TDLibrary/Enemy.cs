@@ -14,6 +14,7 @@ namespace TDLibrary {
     private int _rewardAmount = 25;
     private int _waypointIndex;
     private Transform _waypointTarget;
+    private EnemyManager _enemyManager;
 
     public int Health => _health;
 
@@ -54,11 +55,12 @@ namespace TDLibrary {
     }
 
     private void OnDisable() {
-      EnemyManager.Instance.Unregister(this);
+      _enemyManager?.Unregister(this);
     }
 
     private void OnEnable() {
-      EnemyManager.Instance.Register(this);
+      _enemyManager = EnemyManager.Instance;
+      _enemyManager.Register(this);
       _waypointTarget = Waypoints.points[0];
     }
 

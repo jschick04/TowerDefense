@@ -48,7 +48,7 @@ namespace TDLibrary.Model {
     }
 
     protected void OnDisable() {
-      _turretManager.Unregister((Turret)this);
+      _turretManager?.Unregister((Turret)this);
     }
 
     protected void OnEnable() {
