@@ -7,7 +7,7 @@ namespace TDLibrary.Model.TurretType {
     Laser
   }
 
-  public abstract class BaseTurret : ScriptableObject {
+  public abstract class BaseTurret : MonoBehaviour {
     public float attackRange = 15f;
     public int cost;
     public GameObject prefab;

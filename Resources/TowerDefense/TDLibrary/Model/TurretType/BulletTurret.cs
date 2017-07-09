@@ -2,7 +2,6 @@
 
 namespace TDLibrary.Model.TurretType {
 
-  [CreateAssetMenu(fileName = "Bullet", menuName = "Turret Type/Bullet")]
   public class BulletTurret : BaseTurret {
     public float attackSpeed = 1f;
     public GameObject bulletPrefab;

@@ -1327,7 +1327,8 @@ MonoBehaviour:
   m_Script: {fileID: 105452020, guid: 9f96654e37543244cafda34f9c957e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  turretType: {fileID: 11400000, guid: 8d33ad6fa1a31d449897ca5663958349, type: 2}
+  turretType: {fileID: 114620209467044010, guid: 20aa319803b7a024eaa9ab23dbf37539,
+    type: 2}
   firePosition: {fileID: 4359266441741548}
   turretBase: {fileID: 4113306762528226}
   _name: Rocket

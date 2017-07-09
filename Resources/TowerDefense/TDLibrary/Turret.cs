@@ -37,19 +37,26 @@ namespace TDLibrary {
     }
 
     private void Awake() {
+      // Clone's the turret type and replaces the attached prefab to prevent laser's from stop
+      // working after a new laser is spawned
       if (turretType.TurretType == TurretType.Laser) {
-        ((LaserTurret)turretType).LaserEffect = Instantiate(((LaserTurret)turretType).laserEffectPrefab,
-          gameObject.transform);
-        ((LaserTurret)turretType).LaserBeam = Instantiate(((LaserTurret)turretType).lineRendererPrefab,
-          gameObject.transform);
+        var laserTurret = (LaserTurret)Instantiate(turretType, gameObject.transform);
+        laserTurret.LaserEffect = Instantiate(laserTurret.laserEffectPrefab, laserTurret.transform);
+        laserTurret.LaserBeam = Instantiate(laserTurret.lineRendererPrefab, laserTurret.transform);
+        laserTurret.ImpactLight = GetComponentInChildren<Light>();
+        turretType = laserTurret;
       }
     }
 
+    /// <summary>Keeps the turret's rotation facing the current target</summary>
     private void LockOnTarget() {
       Vector3 direction = currentTarget.transform.position - transform.position;
       Quaternion lookRotation = Quaternion.LookRotation(direction);
-      Vector3 rotation = Quaternion.Lerp(turretBase.rotation, lookRotation, Time.deltaTime * turretType.turnSpeed)
-        .eulerAngles;
+      Vector3 rotation = Quaternion.Lerp(
+        turretBase.rotation,
+        lookRotation,
+        Time.deltaTime * turretType.turnSpeed
+      ).eulerAngles;
       turretBase.rotation = Quaternion.Euler(0f, rotation.y, 0f);
     }
 

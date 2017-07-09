@@ -1327,7 +1327,8 @@ MonoBehaviour:
   m_Script: {fileID: 105452020, guid: 9f96654e37543244cafda34f9c957e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  turretType: {fileID: 11400000, guid: a726d3725bc27da41a2f7bde94d321d5, type: 2}
+  turretType: {fileID: 114120579857183766, guid: ac44ba3037d727a438464151399ba27b,
+    type: 2}
   firePosition: {fileID: 4359266441741548}
   turretBase: {fileID: 4113306762528226}
   _name: Laser
