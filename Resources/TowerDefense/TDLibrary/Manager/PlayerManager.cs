@@ -3,19 +3,30 @@
 namespace TDLibrary.Manager {
 
   public class PlayerManager : SingletonManager<PlayerManager> {
-    public static int lives;
-    public static int money;
-
     [SerializeField]
-    private int _startingLives = 20;
+    private int _lives = 20;
     [SerializeField]
-    private int _startingMoney = 400;
+    private int _money = 400;
 
     protected PlayerManager() { }
 
-    private void Start() {
-      money = _startingMoney;
-      lives = _startingLives;
+    public int Lives {
+      get { return _lives; }
+      set {
+        if (value != null) {
+          _lives = value;
+        }
+      }
+    }
+
+    public int Money {
+      get { return _money; }
+      set {
+        if (value != null) {
+          _money = value;
+        }
+      }
     }
   }
+
 }

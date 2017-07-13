@@ -46,7 +46,7 @@ namespace TDLibrary {
       GameObject effect = Instantiate(_deathEffect, transform.position, Quaternion.identity);
       Destroy(effect, 5f);
 
-      PlayerManager.money += _rewardAmount;
+      PlayerManager.Instance.Money += _rewardAmount;
 
       Destroy(gameObject);
     }
@@ -73,7 +73,7 @@ namespace TDLibrary {
     }
 
     private void ReachFinalWaypoint() {
-      PlayerManager.lives--;
+      PlayerManager.Instance.Lives--;
       Destroy(gameObject);
     }
   }

@@ -12,15 +12,24 @@ namespace TDLibrary.Manager {
     public Text waveCountdownText;
     public float waveDuration = 20f;
 
-    private bool _gameOver;
+    internal bool gameOver;
+
+    [SerializeField]
+    private GameObject _gameOverMenu;
+    private PlayerManager _playerManager;
     private float _waveCountdown;
     private int _waveNumber;
 
     protected GameManager() { }
 
-    private void EndGame() {
-      _gameOver = true;
+    internal void EndGame() {
+      gameOver = true;
+      _gameOverMenu.SetActive(true);
       Debug.Log("Game Over!");
+    }
+
+    private void Awake() {
+      _playerManager = PlayerManager.Instance;
     }
 
     private void SpawnEnemy() {
@@ -37,14 +46,16 @@ namespace TDLibrary.Manager {
     }
 
     private void Update() {
-      if (_gameOver) { return; }
+      if (gameOver) {
+        return;
+      }
 
-      if (PlayerManager.lives <= 0) {
+      if (_playerManager.Lives <= 0) {
         EndGame();
       }
 
-      moneyBalance.text = $"$ {PlayerManager.money}";
-      remainingLives.text = $"{PlayerManager.lives} Lives";
+      moneyBalance.text = $"$ {_playerManager.Lives}";
+      remainingLives.text = $"{_playerManager.Lives} Lives";
 
       if (_waveCountdown <= 0) {
         StartCoroutine(SpawnWave());

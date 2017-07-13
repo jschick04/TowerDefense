@@ -72,6 +72,7 @@
     <Compile Include="Controller\CameraController.cs" />
     <Compile Include="Enemy.cs" />
     <Compile Include="Manager\BuildManager.cs" />
+    <Compile Include="Manager\DebugManager.cs" />
     <Compile Include="Manager\EnemyManager.cs" />
     <Compile Include="Manager\GameManager.cs" />
     <Compile Include="Manager\PlayerManager.cs" />

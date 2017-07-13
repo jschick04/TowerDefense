@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TDLibrary.Manager;
+using UnityEngine;
 
 namespace TDLibrary.Controller {
 
@@ -11,6 +12,10 @@ namespace TDLibrary.Controller {
     private const float MinY = 10f;
 
     private void Update() {
+      if (GameManager.Instance.gameOver) {
+        return;
+      }
+
       if (Input.GetKey(KeyCode.W) || Input.mousePosition.y >= Screen.height - panBoarderThickness) {
         transform.Translate(Vector3.forward * panSpeed * Time.deltaTime, Space.World);
       }
