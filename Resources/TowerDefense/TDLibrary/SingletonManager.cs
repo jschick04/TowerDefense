@@ -3,36 +3,22 @@
 namespace TDLibrary {
 
   public class SingletonManager<T> : MonoBehaviour where T : MonoBehaviour {
-    private static readonly object _lock = new object();
-    private static T _instance;
-    private static bool _stoppingApplication;
+    public bool isPersistant;
 
-    public static T Instance {
-      get {
-        if (_stoppingApplication) {
-          return null;
+    public static T Instance { get; private set; }
+
+    protected virtual void Awake() {
+      if (isPersistant) {
+        if (Instance == null) {
+          Instance = this as T;
+        } else {
+          DestroyObject(gameObject);
         }
 
-        lock (_lock) {
-          if (_instance == null) {
-            _instance = (T)FindObjectOfType(typeof(T));
-
-            if (_instance == null) {
-              var singleton = new GameObject();
-              _instance = singleton.AddComponent<T>();
-              singleton.name = typeof(T).ToString();
-
-              DontDestroyOnLoad(singleton);
-            }
-          }
-
-          return _instance;
-        }
+        DontDestroyOnLoad(gameObject);
+      } else {
+        Instance = this as T;
       }
-    }
-
-    private void OnDisable() {
-      _stoppingApplication = true;
     }
   }
 
